@@ -1,4 +1,4 @@
-from utils import Ansi
+from utils import MSGError
 import sys
 from typing import Any
 
@@ -17,18 +17,18 @@ class RawParser:
         self.end_hub: tuple[str, str, str, dict[str, str]] | None = None
         self.connections: list[tuple[str, str, str, dict[str, str]]] = []
         self.fill_attributes()
+        try:
+            self.check_matching_names()
+        except ParsingError as err:
+            MSGError.print_error(f"Parsing Error: {err}")
+            sys.exit(1)
 
     def parse_to_raw_list(self) -> list[str]:
         try:
             with open(self.path) as f:
                 return f.read().split('\n')
         except OSError as err:
-            print(
-                f"{Ansi.RED.value}"
-                f"{err.__class__.__name__}: {err}"
-                f"{Ansi.RESET.value}",
-                file=sys.stderr
-                )
+            MSGError.print_error(f"{err.__class__.__name__}: {err}")
             sys.exit(1)
 
     def parse_to_raw_dict(self) -> dict[str, Any]:
@@ -70,13 +70,9 @@ class RawParser:
                 try:
                     res[key] = value
                 except KeyError as err:
-                    print(
-                        f"{Ansi.RED.value}"
+                    MSGError.print_error(
                         f"Parsing Error: line n{line_num}, {err}"
-                        f"{Ansi.RESET.value}",
-                        file=sys.stderr
                         )
-                    print(Ansi.RESET.value)
                     sys.exit(1)
 
         res['hubs'] = hubs
@@ -103,12 +99,22 @@ class RawParser:
 
         return res
 
+    def is_valid_name(self, s: str) -> bool:
+        return '-' not in s and not all(c.isspace() for c in s)
+
     def parse_hub_data(self, s: str) -> tuple[str, str, str, dict[str, str]]:
+        def is_valid_int(s: str) -> bool:
+            try:
+                int(s)
+                return True
+            except ValueError:
+                return False
+
         raw: list[str] = s.split(' ', 3)
         if (
-            not raw[0].isalnum()
-            or not raw[1].isdigit()
-            or not raw[2].isdigit()
+            not self.is_valid_name(raw[0])
+            or not is_valid_int(raw[1])
+            or not is_valid_int(raw[2])
         ):
             raise ParsingError("missing/error in hub data <name> <x> <y>")
         metadata: str = ''
@@ -127,13 +133,15 @@ class RawParser:
         str, str, str, dict[str, str]
     ]:
         raw: list[str] = s.split(' ', 1)
-        if raw[0].count('-') != 1:
+        if raw[0].count('-') > 1:
             raise ParsingError(
                 "the connection syntax forbids dashes in zone names"
                 )
         hub: list[str] = raw[0].split('-', 1)
         if (
-            not raw[0] or not hub[0].isalnum() or not hub[1].isalnum()
+            not raw[0] or not raw[0].count('-')
+            or not self.is_valid_name(hub[0])
+            or not self.is_valid_name(hub[1])
         ):
             raise ParsingError(
                 "missing/error in connection data <name1>-<name2>"
@@ -150,58 +158,52 @@ class RawParser:
             self.parse_metadata(metadata)
             )
 
+    def check_matching_names(self) -> None:
+        hub_names: list[str] = [hub[0] for hub in self.hubs]
+
+        if self.start_hub:
+            hub_names.insert(0, self.start_hub[0])
+        if self.end_hub:
+            hub_names.append(self.end_hub[0])
+
+        for name in hub_names:
+            if hub_names.count(name) > 1:
+                raise ParsingError(f"duplicated hub name: {name}")
+
+        for link in self.connections:
+            if link[1] not in hub_names:
+                raise ParsingError(f"No matching hub name for {link[1]}")
+            if link[2] not in hub_names:
+                raise ParsingError(f"No matching hub name for {link[2]}")
+
     def fill_attributes(self) -> None:
         try:
             raw: dict[str, Any] = self.parse_to_raw_dict()
         except ParsingError as err:
-            print(
-                f"{Ansi.RED.value}"
-                f"Parsing Error: {err}"
-                f"{Ansi.RESET.value}",
-                file=sys.stderr
-            )
+            MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
 
         self.nb_drones = raw['nb_drones']
         if not self.nb_drones:
-            print(
-                f"{Ansi.RED.value}"
-                "Parsing Error: missing nb_drones value"
-                f"{Ansi.RESET.value}"
-                )
+            MSGError.print_error("Parsing Error: missing nb_drones value")
             sys.exit(1)
         try:
             self.start_hub = self.parse_hub_data(raw['start_hub'])
             self.end_hub = self.parse_hub_data(raw['end_hub'])
         except ParsingError as err:
-            print(
-                f"{Ansi.RED.value}"
-                f"Parsing Error: {err}"
-                f"{Ansi.RESET.value}",
-                file=sys.stderr
-                )
+            MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
         for hub in raw['hubs']:
             try:
                 self.hubs.append(self.parse_hub_data(hub))
             except ParsingError as err:
-                print(
-                    f"{Ansi.RED.value}"
-                    f"Parsing Error: {err}"
-                    f"{Ansi.RESET.value}",
-                    file=sys.stderr
-                    )
+                MSGError.print_error(f"Parsing Error: {err}")
                 sys.exit(1)
         for connection in raw['connections']:
             try:
                 self.connections.append(self.parse_connection_data(connection))
             except ParsingError as err:
-                print(
-                    f"{Ansi.RED.value}"
-                    f"Parsing Error: {err}"
-                    f"{Ansi.RESET.value}",
-                    file=sys.stderr
-                    )
+                MSGError.print_error(f"Parsing Error: {err}")
                 sys.exit(1)
 
 

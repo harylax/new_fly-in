@@ -1,4 +1,16 @@
 from enum import Enum
+import sys
+
+
+class MSGError:
+    @staticmethod
+    def print_error(msg: str) -> None:
+        print(
+            f"{Ansi.RED.value}"
+            f"{msg}"
+            f"{Ansi.RESET.value}",
+            file=sys.stderr
+        )
 
 
 class Ansi(Enum):
@@ -15,37 +27,49 @@ class Ansi(Enum):
 
 
 class Color(Enum):
-    green = "green"
-    blue = "blue"
-    yellow = "yellow"
-    orange = "orange"
-    red = "red"
-    purple = "purple"
-    cyan = "cyan"
-    none = "none"
-    brown = "brown"
-    lime = "lime"
-    magenta = "magenta"
-    gold = "gold"
-    white = "white"
+    GREEN = "green"
+    BLUE = "blue"
+    YELLOW = "yellow"
+    ORANGE = "orange"
+    RED = "red"
+    PURPLE = "purple"
+    CYAN = "cyan"
+    NONE = "none"
+    BROWN = "brown"
+    LIME = "lime"
+    MAGENTA = "magenta"
+    GOLD = "gold"
+    WHITE = "white"
+    BLACK = "black"
+    MAROON = "maroon"
+    DARKRED = "darkred"
+    CRIMSON = "crimson"
+    VIOLET = "violet"
+    RAINBOW = "rainbow"
 
     @property
     def rgb(self) -> tuple[int, int, int]:
         color_dict: dict[
             Color, tuple[int, int, int]
             ] = {
-            Color.green: (30, 140, 30),
-            Color.blue: (30, 60, 150),
-            Color.yellow: (180, 160, 40),
-            Color.orange: (200, 100, 20),
-            Color.red: (170, 40, 40),
-            Color.purple: (100, 40, 150),
-            Color.cyan: (30, 130, 130),
-            Color.none: (80, 80, 80),
-            Color.brown: (100, 60, 30),
-            Color.lime: (90, 150, 40),
-            Color.magenta: (140, 40, 140),
-            Color.gold: (170, 140, 20),
-            Color.white: (200, 200, 200)
+            Color.GREEN: (30, 140, 30),
+            Color.BLUE: (30, 60, 150),
+            Color.YELLOW: (180, 160, 40),
+            Color.ORANGE: (200, 100, 20),
+            Color.RED: (170, 40, 40),
+            Color.PURPLE: (100, 40, 150),
+            Color.CYAN: (30, 130, 130),
+            Color.NONE: (80, 80, 80),
+            Color.BROWN: (100, 60, 30),
+            Color.LIME: (90, 150, 40),
+            Color.MAGENTA: (140, 40, 140),
+            Color.GOLD: (170, 140, 20),
+            Color.WHITE: (200, 200, 200),
+            Color.BLACK: (15, 15, 15),
+            Color.MAROON: (90, 30, 30),
+            Color.DARKRED: (110, 20, 20),
+            Color.CRIMSON: (150, 20, 50),
+            Color.RAINBOW: (180, 60, 180),
+            Color.VIOLET: (140, 60, 190)
         }
         return color_dict[self]

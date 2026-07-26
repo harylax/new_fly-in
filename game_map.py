@@ -1,14 +1,12 @@
 from __future__ import annotations
 from model import HubData, ConnectionData, MapModel, Zone
-from utils import Ansi, Color
-import sys
+from utils import Color, MSGError
 
 
 class Drone:
     def __init__(self, id: int = 0) -> None:
         self.id: int = id
-        self.zone: Hub | None = None
-        self.restricted: bool = False
+        self.zone: Hub | Connection | None = None
 
 
 class Hub:
@@ -22,6 +20,12 @@ class Hub:
         self.current_drones: list[Drone] = []
         self.previous_hubs: list[Hub] = []
         self.next_hubs: list[Hub] = []
+        self.cost: int = 0
+        self.current_capacity: int = 0
+        self.compute_hub_capacity()
+
+    def compute_hub_capacity(self) -> None:
+        self.current_capacity = self.max_drones - len(self.current_drones)
 
 
 class Connection:
@@ -30,6 +34,14 @@ class Connection:
         self.max_link_capacity: int = connection.max_link_capacity
         self.origin: Hub | None = None
         self.destination: Hub | None = None
+        self.current_drones: list[Drone] = []
+        self.current_capacity: int = 0
+        self.compute_link_capacity()
+
+    def compute_link_capacity(self) -> None:
+        self.current_capacity = self.max_link_capacity - len(
+            self.current_drones
+            )
 
 
 class GameMap:
@@ -54,13 +66,11 @@ class GameMap:
         self.end_hub: Hub = self.hubs[-1]
 
         if self.end_hub.max_drones < self.nb_drones:
-            print(
-                f"{Ansi.RED.value}"
-                "Map Error: nb_drones is more than end hub capacity"
-                f"{Ansi.RESET.value}",
-                file=sys.stderr
+            MSGError.print_error(
+                "Map Error: nb_drones is more than end hub capacity, "
+                f"set it to {self.nb_drones}"
                 )
-            sys.exit(1)
+            self.end_hub.max_drones = self.nb_drones
 
     def get_hub_neighbors(self) -> None:
         for hub in self.hubs:
