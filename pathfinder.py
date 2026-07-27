@@ -15,7 +15,7 @@ class PathFinder:
         self.unreachable: set[str] = set()
 
         try:
-            self.bfs_find_dead_ends()
+            self.bfs_find_unreachable()
         except PathError as err:
             MSGError.print_error(f"Path Error: {err}")
             sys.exit(1)
@@ -31,7 +31,7 @@ class PathFinder:
             return True
         return hub.name in self.unreachable
 
-    def bfs_find_dead_ends(self) -> None:
+    def bfs_find_unreachable(self) -> None:
         unvisited: set[Hub] = set(self.network.hubs)
         queue: deque = deque([self.network.end_hub])
 
@@ -42,6 +42,9 @@ class PathFinder:
                 continue
 
             unvisited.remove(current)
+
+            for previous in current.previous_hubs:
+                queue.append(previous)
 
         self.unreachable = {hub.name for hub in unvisited}
 

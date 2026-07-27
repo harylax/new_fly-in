@@ -1,6 +1,17 @@
+import sys
 from network import Network
-from utils import Img, Color
-import pygame
+from utils import Img, Color, MSGError
+try:
+    import pygame  # type: ignore
+except ImportError as err:
+    MSGError.print_error(
+        f"Import Error: {err}\n"
+        "Please, install pygame before any run.\n"
+        "Usage:\npython3 -m venv venv"
+        "\nsource venv/bin/activate"
+        "\npython3 -m pip install pygame"
+    )
+    sys.exit(1)
 from typing import Any
 
 

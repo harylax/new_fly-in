@@ -5,13 +5,13 @@ from parser import RawParser
 try:
     from pydantic import BaseModel, Field, ValidationError  # type: ignore
 except ImportError as err:
-    print(f"Import Error: {err}")
-    print("Please, install pydantic before any run.")
-    print(
+    MSGError.print_error(
+        f"Import Error: {err}\n"
+        "Please, install pydantic before any run.\n"
         "Usage:\npython3 -m venv venv"
         "\nsource venv/bin/activate"
         "\npython3 -m pip install pydantic"
-        )
+    )
     sys.exit(1)
 
 

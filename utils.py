@@ -1,6 +1,5 @@
 from enum import Enum
 import sys
-import pygame
 
 
 class MSGError:
@@ -77,5 +76,17 @@ class Color(Enum):
 
 
 class Img(Enum):
+    try:
+        import pygame  # type: ignore
+    except ImportError as err:
+        MSGError.print_error(
+            f"Import Error: {err}\n"
+            "Please, install pygame before any run.\n"
+            "Usage:\npython3 -m venv venv"
+            "\nsource venv/bin/activate"
+            "\npython3 -m pip install pygame"
+        )
+        sys.exit(1)
+
     BACKGROUND = pygame.image.load('isometric-city-bg-1600x800-darker.png')
     DRONE = pygame.image.load('drone-isometric-facing-right.png')
