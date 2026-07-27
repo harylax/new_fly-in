@@ -20,7 +20,11 @@ class Hub:
         self.current_drones: list[Drone] = []
         self.previous_hubs: list[Hub] = []
         self.next_hubs: list[Hub] = []
-        self.cost: int = 1
+        self.cost = (
+            999999 if hub.zone == Zone.BLOCKED
+            else 2 if hub.zone == Zone.RESTRICTED
+            else 1
+        )
         self.current_capacity: int = 0
         self.compute_hub_capacity()
 
