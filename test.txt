@@ -4,8 +4,7 @@ nb_drones: 3
 start_hub: start 0 0 [color=green]
 hub: junction 1 0 [color=yellow max_drones=2]
 hub: path_a 2 1 [color=blue]
-hub: path_aa 3 1 [color=blue]
-hub: path_aaa 4 1 [color=blue]
+hub: path_aa 4 1 [color=blue]
 hub: path_b 2 -1 [color=blue]
 hub: path_bb 3 -1 [color=blue]
 hub: path_bbb 4 -1 [color=blue]
@@ -14,8 +13,7 @@ end_hub: goal 5 0 [color=red max_drones=3]
 connection: start-junction
 connection: junction-path_a
 connection: path_a-path_aa
-connection: path_aa-path_aaa
-connection: path_aaa-goal
+connection: path_aa-goal
 connection: junction-path_b
 connection: path_b-path_bb
 connection: path_bb-path_bbb

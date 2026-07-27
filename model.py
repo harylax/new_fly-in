@@ -104,13 +104,11 @@ class MapModel:
                 sys.exit(1)
 
         try:
-            self.connections: list[HubData] = [
+            self.connections: list[ConnectionData] = [
                 ConnectionData(
                     name=link[0],
                     origin=link[1],
                     destination=link[2],
-                    zone=link[3].get('zone', Zone.NORMAL),
-                    color=link[3].get('color', Color.NONE),
                     max_link_capacity=link[3].get('max_link_capacity', 1)
                 ) for link in raw.connections
             ]

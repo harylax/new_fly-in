@@ -20,7 +20,7 @@ class Hub:
         self.current_drones: list[Drone] = []
         self.previous_hubs: list[Hub] = []
         self.next_hubs: list[Hub] = []
-        self.cost: int = 0
+        self.cost: int = 1
         self.current_capacity: int = 0
         self.compute_hub_capacity()
 
@@ -44,7 +44,7 @@ class Connection:
             )
 
 
-class GameMap:
+class Network:
     def __init__(self, map_model: MapModel) -> None:
         self.nb_drones: int = map_model.nb_drones
 
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     from parser import RawParser
     raw = RawParser('test.txt')
     map_model = MapModel(raw)
-    game_map = GameMap(map_model)
+    game_map = Network(map_model)
     print(game_map)

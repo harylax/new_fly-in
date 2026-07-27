@@ -1,5 +1,6 @@
 from enum import Enum
 import sys
+import pygame
 
 
 class MSGError:
@@ -73,3 +74,8 @@ class Color(Enum):
             Color.VIOLET: (140, 60, 190)
         }
         return color_dict[self]
+
+
+class Img(Enum):
+    BACKGROUND = pygame.image.load('isometric-city-bg-1600x800-darker.png')
+    DRONE = pygame.image.load('drone-isometric-facing-right.png')

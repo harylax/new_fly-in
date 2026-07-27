@@ -1,31 +1,31 @@
-from game_map import GameMap, Zone, Drone
+from network import Network, Zone, Drone
 from pathfinder import PathFinder
 
 
 class Simulation:
-    def __init__(self, game_map: GameMap, pathfinder: PathFinder):
-        self.game_map: GameMap = game_map
+    def __init__(self, network: Network, pathfinder: PathFinder):
+        self.network: Network = network
         self.pathfinder: PathFinder = pathfinder
         self.drones_moves: list[list[tuple[int, str]]] = []
         self.init_drones_pos()
 
     def snapshot(self) -> list[tuple[int, str]]:
         res: list[tuple[int, str]] = []
-        for drone in self.game_map.drones:
+        for drone in self.network.drones:
             if drone.zone:
                 res.append((drone.id, drone.zone.name))
         return res
 
     def init_drones_pos(self) -> None:
-        for drone in self.game_map.drones:
-            drone.zone = self.game_map.start_hub
-            self.game_map.start_hub.current_drones.append(drone)
-            self.game_map.start_hub.compute_hub_capacity()
+        for drone in self.network.drones:
+            drone.zone = self.network.start_hub
+            self.network.start_hub.current_drones.append(drone)
+            self.network.start_hub.compute_hub_capacity()
         self.drones_moves.append(self.snapshot())
 
     def restricted_drones(self) -> dict[str, list[Drone]]:
         res: dict[str, list[Drone]] = {}
-        for link in self.game_map.connections:
+        for link in self.network.connections:
             if link.current_drones and link.destination:
                 res.setdefault(
                     link.destination.name, []
@@ -35,7 +35,7 @@ class Simulation:
         return res
 
     def free_drones(self, restricted: dict[str, list[Drone]]) -> None:
-        for hub in self.game_map.hubs:
+        for hub in self.network.hubs:
             if hub.name in restricted:
                 for drone in restricted[hub.name]:
                     hub.current_drones.append(drone)
@@ -45,12 +45,12 @@ class Simulation:
 
     def solver(self) -> None:
         turn: int = 0
-        nb_drones: int = self.game_map.nb_drones
-        while len(self.game_map.end_hub.current_drones) != nb_drones:
+        nb_drones: int = self.network.nb_drones
+        while len(self.network.end_hub.current_drones) != nb_drones:
 
             restricted: dict[str, list[Drone]] = self.restricted_drones()
 
-            for hub in reversed(self.game_map.hubs):
+            for hub in reversed(self.network.hubs):
                 if self.pathfinder.is_dead_end(hub):
                     continue
                 for prev in self.pathfinder.sorted_hubs(hub.previous_hubs):
@@ -59,7 +59,7 @@ class Simulation:
                     if not prev.current_drones:
                         continue
                     if hub.zone == Zone.RESTRICTED:
-                        for link in self.game_map.connections:
+                        for link in self.network.connections:
                             if link.destination == hub and link.origin == prev:
                                 capacity: int = min(
                                     link.current_capacity, hub.current_capacity
@@ -75,7 +75,7 @@ class Simulation:
                                     prev.compute_hub_capacity()
                                     i += 1
                     else:
-                        for link in self.game_map.connections:
+                        for link in self.network.connections:
                             if link.destination == hub and link.origin == prev:
                                 capacity = min(
                                     link.current_capacity, hub.current_capacity
@@ -114,9 +114,9 @@ if __name__ == "__main__":
     raw = RawParser(hard4)
     from model import MapModel
     model = MapModel(raw)
-    game_map = GameMap(model)
-    pathfinder = PathFinder(game_map)
-    sim = Simulation(game_map, pathfinder)
+    network = Network(model)
+    pathfinder = PathFinder(network)
+    sim = Simulation(network, pathfinder)
     sim.solver()
 
     result: list[str] = []

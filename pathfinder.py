@@ -1,4 +1,4 @@
-from game_map import GameMap, Hub, Zone
+from network import Network, Hub, Zone
 import sys
 from utils import MSGError
 from collections import deque
@@ -6,12 +6,12 @@ from collections import deque
 
 class PathError(Exception):
     def __init__(self, *args) -> None:
-        super().__init__(self, *args)
+        super().__init__(*args)
 
 
 class PathFinder:
-    def __init__(self, game_map: GameMap) -> None:
-        self.game_map: GameMap = game_map
+    def __init__(self, network: Network) -> None:
+        self.network: Network = network
         self.unreachable: set[str] = set()
 
         try:
@@ -25,15 +25,15 @@ class PathFinder:
             )
 
     def is_dead_end(self, hub: Hub) -> bool:
-        if hub == self.game_map.end_hub:
+        if hub == self.network.end_hub:
             return False
         if hub.zone == Zone.BLOCKED:
             return True
         return hub.name in self.unreachable
 
     def compute_hub_cost(self) -> None:
-        unvisited: set[Hub] = set(self.game_map.hubs)
-        queue: deque = deque([self.game_map.end_hub])
+        unvisited: set[Hub] = set(self.network.hubs)
+        queue: deque = deque([self.network.end_hub])
 
         while queue:
             current: Hub = queue.popleft()
@@ -46,15 +46,15 @@ class PathFinder:
             for previous in current.previous_hubs:
                 queue.append(previous)
                 if previous.zone == Zone.RESTRICTED:
-                    previous.cost = current.cost + 2
+                    previous.cost = 2
                 elif self.is_dead_end(previous):
-                    previous.cost = current.cost + 99
+                    previous.cost = 99
                 else:
-                    previous.cost = current.cost + 1
+                    previous.cost = 1
 
         self.unreachable = {hub.name for hub in unvisited}
 
-        if self.game_map.start_hub in unvisited:
+        if self.network.start_hub in unvisited:
             raise PathError("no path found")
 
     def dfs_path(self) -> list[list[str]]:
@@ -66,7 +66,7 @@ class PathFinder:
             visited.add(hub.name)
             path.append(hub.name)
 
-            if hub == self.game_map.end_hub:
+            if hub == self.network.end_hub:
                 res.append(path[:])
             else:
                 for next in hub.next_hubs:
@@ -79,7 +79,7 @@ class PathFinder:
             path.pop()
             visited.remove(hub.name)
 
-        dfs(self.game_map.start_hub)
+        dfs(self.network.start_hub)
 
         if not res:
             MSGError.print_error("Map Error: no path found")
@@ -89,7 +89,7 @@ class PathFinder:
 
     def compute_path_cost(self, path: list[str]) -> int:
         cost: int = 0
-        for hub in self.game_map.hubs:
+        for hub in self.network.hubs:
             if hub.name in path:
                 cost += hub.cost
         return cost
@@ -108,13 +108,19 @@ class PathFinder:
 
 if __name__ == "__main__":
     from parser import RawParser
-    raw = RawParser('test.txt')
+    # raw = RawParser('test.txt')
+    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     map_model = MapModel(raw)
-    game_map = GameMap(map_model)
-    pathfinder = PathFinder(game_map)
+    network = Network(map_model)
+    pathfinder = PathFinder(network)
 
     for i, hubs in enumerate(pathfinder.paths, start=1):
         print(f"\nPath n{i}:")
-        for hub in hubs:
-            print(hub)
+        for j, name in enumerate(hubs, start=1):
+            for hub in network.hubs:
+                if hub.name == name:
+                    print(f"hub {j}: {name} - {hub.cost}")
+    print()
+    for k, hubs in enumerate(pathfinder.paths, start=1):
+        print(f"Cost path {k}: {pathfinder.compute_path_cost(hubs)}")
