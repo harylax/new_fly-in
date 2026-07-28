@@ -28,7 +28,10 @@ class StaticMap:
             Img.BACKGROUND.value, (self.width, self.height)
             )
         self.screen: Any = pygame.display.set_mode((self.width, self.height))
-        self.font = pygame.font.SysFont(None, 22)
+        self.font: dict[int, Any] = {
+            22: pygame.font.SysFont(None, 22),
+            36: pygame.font.SysFont(None, 36)
+        }
         self.legends: dict[str, Color] = {
             hub.name.strip('0123456789'): hub.color for hub in network.hubs
         }
@@ -42,7 +45,7 @@ class StaticMap:
             pygame.draw.circle(
                 self.screen, self.legends[name].rgb, (spacing, pos), 10
                 )
-            label: Any = self.font.render(name, True, Color.WHITE.rgb)
+            label: Any = self.font[22].render(name, True, Color.WHITE.rgb)
             self.screen.blit(label, (spacing + 15, pos - 8))
             pos += spacing
 
@@ -56,6 +59,15 @@ class StaticMap:
         for hub in self.network.hubs:
             x, y = self.hub_positions[hub.name]
             pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
+            letter: str = (
+                "S" if hub == self.network.start_hub
+                else "G" if hub == self.network.end_hub
+                else hub.zone.value[0].capitalize()
+            )
+            initial: Any = self.font[36].render(
+                letter, True, Color.WHITE.rgb
+                )
+            self.screen.blit(initial, initial.get_rect(center=(x, y)))
 
     def to_screen(self, x: int, y: int) -> tuple[int, int]:
         margin: int = 150
@@ -114,7 +126,7 @@ class Animation:
         for drone_id, name in self.drones_moves[self.current_turn]:
             x, y = self.get_position(name)
             self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
-            label: Any = self.font.render(
+            label: Any = self.font[22].render(
                 f"D{drone_id}", True, Color.WHITE.rgb
                 )
             self.screen.blit(label, (x, y - 30))
@@ -136,7 +148,7 @@ class GameMap:
             f"Turn {self.animation.current_turn}/"
             f"{self.animation.max_turn}{status}"
         )
-        label: Any = self.static.font.render(text, True, Color.BLACK.rgb)
+        label: Any = self.static.font[36].render(text, True, Color.BLACK.rgb)
         x: int = self.static.width // 2 - 100
         y: int = 10
         padding: int = 10
