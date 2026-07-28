@@ -132,6 +132,8 @@ class Animation:
             ] = simulation.drones_moves
         self.current_turn: int = 0
         self.max_turn: int = len(simulation.drones_moves) - 1
+        self.progress: int = 0
+        self.turn_duration: int = 1000
 
     def get_position(self, name: str) -> tuple[float, float]:
         for link in self.network.connections:
@@ -148,19 +150,55 @@ class Animation:
     def draw_drones(self) -> None:
         count_drawn: dict[str, int] = {}
         end_count: int = 0
-        for drone_id, name in self.drones_moves[self.current_turn]:
-            x, y = self.get_position(name)
+
+        progress_ratio: float = min(
+            self.progress / self.turn_duration, 1.0
+            ) if self.current_turn < self.max_turn else 0.0
+
+        prev_state: list[
+            tuple[int, str]
+        ] = self.drones_moves[self.current_turn]
+        next_turn: int = min(self.current_turn + 1, self.max_turn)
+        next_state: list[
+            tuple[int, str]
+        ] = self.drones_moves[next_turn]
+
+        # for drone_id, name in self.drones_moves[self.current_turn]:
+        #     x, y = self.get_position(name)
+        #     x += self.static.horizontal_scroll
+        #     y += self.static.vertical_scroll
+        #     if name == self.network.end_hub.name:
+        #         x += end_count * 20
+        #         end_count += 1
+        #     else:
+        #         if name in count_drawn:
+        #             x += count_drawn[name]
+        #             count_drawn[name] -= 20
+        #         else:
+        #             count_drawn[name] = -20
+        #     self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
+        #     label: Any = self.font[22].render(
+        #         f"D{drone_id}", True, Color.YELLOW.rgb
+        #         )
+        #     self.screen.blit(label, (x, y - 30))
+        for (drone_id, prev_name), (_, next_name) in zip(
+            prev_state, next_state
+        ):
+            px, py = self.get_position(prev_name)
+            nx, ny = self.get_position(next_name)
+            x: float = px + (nx - px) * progress_ratio
+            y: float = py + (ny - py) * progress_ratio
             x += self.static.horizontal_scroll
             y += self.static.vertical_scroll
-            if name == self.network.end_hub.name:
-                x += end_count * 20
+            if prev_name == self.network.end_hub.name:
+                x += end_count * 25
                 end_count += 1
             else:
-                if name in count_drawn:
-                    x += count_drawn[name]
-                    count_drawn[name] -= 20
+                if prev_name in count_drawn:
+                    x += count_drawn[prev_name]
+                    count_drawn[prev_name] -= 25
                 else:
-                    count_drawn[name] = -20
+                    count_drawn[prev_name] = -25
             self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
             label: Any = self.font[22].render(
                 f"D{drone_id}", True, Color.YELLOW.rgb
@@ -175,8 +213,8 @@ class GameMap:
         self.running: bool = True
         self.paused: bool = True
         self.clock: Any = pygame.time.Clock()
-        self.progress: int = 0
-        self.turn_duration: int = 1000
+        # self.progress: int = 0
+        # self.turn_duration: int = 1000
 
     def display_turn_and_status(self) -> None:
         status: str = " [PAUSED]" if self.paused else ""
@@ -217,17 +255,17 @@ class GameMap:
             if keys[pygame.K_UP]:
                 self.static.vertical_scroll -= 5
             if keys[pygame.K_LEFT]:
-                self.static.horizontal_scroll += 5
+                self.static.horizontal_scroll += 10
             if keys[pygame.K_RIGHT]:
-                self.static.horizontal_scroll -= 5
+                self.static.horizontal_scroll -= 10
 
             if (
                 not self.paused
                 and self.animation.current_turn < self.animation.max_turn
             ):
-                self.progress += delta_time
-                if self.progress > self.turn_duration:
-                    self.progress = 0
+                self.animation.progress += delta_time
+                if self.animation.progress > self.animation.turn_duration:
+                    self.animation.progress = 0
                     self.animation.current_turn += 1
 
             self.static.draw_static()
