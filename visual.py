@@ -21,8 +21,16 @@ class StaticMap:
         self.network: Network = network
         self.width: int = 1200
         self.height: int = 600
+        self.horizontal_scroll: int = 0
+        self.vertical_scroll: int = 0
+        # self.hub_positions: dict[str, tuple[float, float]] = {
+        #     hub.name: self.to_screen(hub.x, hub.y) for hub in network.hubs
+        # }
         self.hub_positions: dict[str, tuple[float, float]] = {
-            hub.name: self.to_screen(hub.x, hub.y) for hub in network.hubs
+            hub.name: (
+                hub.x * 150 + 150,
+                hub.y * 100 + self.height / 2
+                ) for hub in network.hubs
         }
         self.background: Any = pygame.transform.smoothscale(
             Img.BACKGROUND.value, (self.width, self.height)
@@ -32,35 +40,42 @@ class StaticMap:
             22: pygame.font.SysFont(None, 22),
             36: pygame.font.SysFont(None, 36)
         }
-        self.legends: dict[str, Color] = {
-            hub.name.strip('0123456789'): hub.color for hub in network.hubs
-        }
+        # self.legend_scroll: int = 30
+        # self.legends: dict[str, Color] = {
+        #     hub.name: hub.color for hub in network.hubs
+        # }
 
     def draw_static(self) -> None:
         self.screen.blit(self.background, (0, 0))
 
-        spacing: int = 30
-        pos: int = spacing
-        for name in self.legends:
-            pygame.draw.circle(
-                self.screen, self.legends[name].rgb, (spacing, pos), 10
-                )
-            label: Any = self.font[22].render(name, True, Color.WHITE.rgb)
-            self.screen.blit(label, (spacing + 15, pos - 8))
-            pos += spacing
+        # spacing: int = 30
+        # legend_y: int = self.legend_scroll
+        # for name in self.legends:
+        #     pygame.draw.circle(
+        #         self.screen, self.legends[name].rgb,
+        #         (spacing, legend_y), 10
+        #         )
+        #     label: Any = self.font[22].render(name, True, Color.WHITE.rgb)
+        #     self.screen.blit(label, (spacing + 15, legend_y - 8))
+        #     legend_y += spacing
 
         for link in self.network.connections:
             if link.origin and link.destination:
-                pos1: tuple[
-                    float, float
-                    ] = self.hub_positions[link.origin.name]
-                pos2: tuple[
-                    float, float
-                    ] = self.hub_positions[link.destination.name]
-                pygame.draw.line(self.screen, Color.WHITE.rgb, pos1, pos2, 3)
+                x1, y1 = self.hub_positions[link.origin.name]
+                x2, y2 = self.hub_positions[link.destination.name]
+                x1 += self.horizontal_scroll
+                x2 += self.horizontal_scroll
+                y1 += self.vertical_scroll
+                y2 += self.vertical_scroll
+                pygame.draw.line(
+                    self.screen, Color.NONE.rgb,
+                    (x1, y1), (x2, y2), 3
+                    )
 
         for hub in self.network.hubs:
             x, y = self.hub_positions[hub.name]
+            x += self.horizontal_scroll
+            y += self.vertical_scroll
             pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
             letter: str = (
                 "S" if hub == self.network.start_hub
@@ -71,35 +86,38 @@ class StaticMap:
                 letter, True, Color.WHITE.rgb
                 )
             self.screen.blit(initial, initial.get_rect(center=(x, y)))
+            label: Any = self.font[22].render(hub.name, True, Color.WHITE.rgb)
+            self.screen.blit(label, (x - 35, y - 40))
 
-    def to_screen(self, x: int, y: int) -> tuple[float, float]:
-        margin: int = 150
+    # def to_screen(self, x: int, y: int) -> tuple[float, float]:
+    #     margin: int = 150
 
-        xs: list[int] = [hub.x for hub in self.network.hubs]
-        ys: list[int] = [hub.y for hub in self.network.hubs]
+    #     xs: list[int] = [hub.x for hub in self.network.hubs]
+    #     ys: list[int] = [hub.y for hub in self.network.hubs]
 
-        min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
+    #     min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
 
-        range_x: int = (max_x - min_x) or 1
-        range_y: int = (max_y - min_y) or 1
+    #     range_x: int = (max_x - min_x) or 1
+    #     range_y: int = (max_y - min_y) or 1
 
-        pos_x_ratio: float = (x - min_x) / range_x
-        pos_y_ratio: float = (y - min_y) / range_y
+    #     pos_x_ratio: float = (x - min_x) / range_x
+    #     pos_y_ratio: float = (y - min_y) / range_y
 
-        width: int = self.width - 2 * margin
-        height: int = self.height - 2 * margin
+    #     width: int = self.width - 2 * margin
+    #     height: int = self.height - 2 * margin
 
-        ratio_x_on_screen: float = pos_x_ratio * width
-        ratio_y_on_screen: float = pos_y_ratio * height
+    #     ratio_x_on_screen: float = pos_x_ratio * width
+    #     ratio_y_on_screen: float = pos_y_ratio * height
 
-        sx: float = ratio_x_on_screen + margin + 50
-        sy: float = ratio_y_on_screen + margin
+    #     sx: float = ratio_x_on_screen + margin + 50
+    #     sy: float = ratio_y_on_screen + margin
 
-        return (sx, sy)
+    #     return (sx, sy)
 
 
 class Animation:
     def __init__(self, static: StaticMap, simulation: Simulation) -> None:
+        self.static: StaticMap = static
         self.network: Network = static.network
         self.drone: Any = pygame.transform.smoothscale(
             Img.DRONE.value, (60, 60)
@@ -132,6 +150,8 @@ class Animation:
         end_count: int = 0
         for drone_id, name in self.drones_moves[self.current_turn]:
             x, y = self.get_position(name)
+            x += self.static.horizontal_scroll
+            y += self.static.vertical_scroll
             if name == self.network.end_hub.name:
                 x += end_count * 20
                 end_count += 1
@@ -188,8 +208,18 @@ class GameMap:
                         self.running = False
                     elif event.key == pygame.K_SPACE:
                         self.paused = not self.paused
-                    elif event.key in [pygame.K_r]:
+                    elif event.key == pygame.K_r:
                         self.animation.current_turn = 0
+
+            keys: Any = pygame.key.get_pressed()
+            if keys[pygame.K_DOWN]:
+                self.static.vertical_scroll += 5
+            if keys[pygame.K_UP]:
+                self.static.vertical_scroll -= 5
+            if keys[pygame.K_LEFT]:
+                self.static.horizontal_scroll += 5
+            if keys[pygame.K_RIGHT]:
+                self.static.horizontal_scroll -= 5
 
             if (
                 not self.paused

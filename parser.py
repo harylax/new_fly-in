@@ -4,8 +4,7 @@ from typing import Any
 
 
 class ParsingError(Exception):
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    pass
 
 
 class RawParser:
@@ -78,10 +77,28 @@ class RawParser:
         res['hubs'] = hubs
         res['connections'] = connections
 
+        if (
+            'nb_drones' not in res
+            or 'start_hub' not in res
+            or 'end_hub' not in res
+            or not res['hubs']
+            or not res['connections']
+        ):
+            raise ParsingError(
+                "missing key in map from "
+                "'nb_drones', 'start_hub', 'hub', 'end_hub', 'connection'"
+                )
+
         return res
 
     def parse_metadata(self, s: str) -> dict[str, str]:
         s = s.strip()
+        if not s:
+            return {}
+        if not s.startswith('[') or not s.endswith(']'):
+            raise ParsingError(
+                "metadata syntax should be in the format [key=value]"
+                )
         s = s.strip('[]')
         raw: list[str] = s.split()
 

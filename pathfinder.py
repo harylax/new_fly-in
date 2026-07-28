@@ -5,8 +5,7 @@ from collections import deque
 
 
 class PathError(Exception):
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    pass
 
 
 class PathFinder:
