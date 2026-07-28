@@ -21,7 +21,7 @@ class StaticMap:
         self.network: Network = network
         self.width: int = 1200
         self.height: int = 600
-        self.hub_positions: dict[str, tuple[int, int]] = {
+        self.hub_positions: dict[str, tuple[float, float]] = {
             hub.name: self.to_screen(hub.x, hub.y) for hub in network.hubs
         }
         self.background: Any = pygame.transform.smoothscale(
@@ -51,9 +51,12 @@ class StaticMap:
 
         for link in self.network.connections:
             if link.origin and link.destination:
-                pos1: tuple[int, int] = self.hub_positions[link.origin.name]
-                pos2: tuple[int, int] = \
-                    self.hub_positions[link.destination.name]
+                pos1: tuple[
+                    float, float
+                    ] = self.hub_positions[link.origin.name]
+                pos2: tuple[
+                    float, float
+                    ] = self.hub_positions[link.destination.name]
                 pygame.draw.line(self.screen, Color.WHITE.rgb, pos1, pos2, 3)
 
         for hub in self.network.hubs:
@@ -69,7 +72,7 @@ class StaticMap:
                 )
             self.screen.blit(initial, initial.get_rect(center=(x, y)))
 
-    def to_screen(self, x: int, y: int) -> tuple[int, int]:
+    def to_screen(self, x: int, y: int) -> tuple[float, float]:
         margin: int = 150
 
         xs: list[int] = [hub.x for hub in self.network.hubs]
@@ -89,8 +92,8 @@ class StaticMap:
         ratio_x_on_screen: float = pos_x_ratio * width
         ratio_y_on_screen: float = pos_y_ratio * height
 
-        sx: int = int(ratio_x_on_screen + margin + 50)
-        sy: int = int(ratio_y_on_screen + margin)
+        sx: float = ratio_x_on_screen + margin + 50
+        sy: float = ratio_y_on_screen + margin
 
         return (sx, sy)
 
@@ -101,7 +104,9 @@ class Animation:
         self.drone: Any = pygame.transform.smoothscale(
             Img.DRONE.value, (60, 60)
             )
-        self.hub_positions: dict[str, tuple[int, int]] = static.hub_positions
+        self.hub_positions: dict[
+            str, tuple[float, float]
+            ] = static.hub_positions
         self.screen = static.screen
         self.font = static.font
         self.drones_moves: list[
@@ -123,11 +128,22 @@ class Animation:
         return self.hub_positions[name]
 
     def draw_drones(self) -> None:
+        count_drawn: dict[str, int] = {}
+        end_count: int = 0
         for drone_id, name in self.drones_moves[self.current_turn]:
             x, y = self.get_position(name)
+            if name == self.network.end_hub.name:
+                x += end_count * 20
+                end_count += 1
+            else:
+                if name in count_drawn:
+                    x += count_drawn[name]
+                    count_drawn[name] -= 20
+                else:
+                    count_drawn[name] = -20
             self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
             label: Any = self.font[22].render(
-                f"D{drone_id}", True, Color.WHITE.rgb
+                f"D{drone_id}", True, Color.YELLOW.rgb
                 )
             self.screen.blit(label, (x, y - 30))
 
@@ -194,7 +210,8 @@ class GameMap:
 if __name__ == "__main__":
     pygame.init()
     from parser import RawParser
-    raw = RawParser('test.txt')
+    # raw = RawParser('test.txt')
+    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     model = MapModel(raw)
     network = Network(model)
