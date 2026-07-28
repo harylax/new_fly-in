@@ -13,6 +13,10 @@ class PathFinder:
         self.network: Network = network
         self.unreachable: set[str] = set()
 
+        if self.network.start_hub.zone == Zone.BLOCKED:
+            MSGError.print_error("Path Error: 'start_hub' is blocked")
+            sys.exit(1)
+
         try:
             self.bfs_find_unreachable()
         except PathError as err:
@@ -41,6 +45,9 @@ class PathFinder:
                 continue
 
             unvisited.remove(current)
+
+            if current.zone == Zone.BLOCKED:
+                continue
 
             for previous in current.previous_hubs:
                 queue.append(previous)

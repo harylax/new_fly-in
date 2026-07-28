@@ -1,5 +1,5 @@
 import sys
-from network import Network
+from network import Network, Zone
 from simulation import Simulation
 from utils import Img, Color, MSGError
 try:
@@ -80,6 +80,7 @@ class StaticMap:
             letter: str = (
                 "S" if hub == self.network.start_hub
                 else "G" if hub == self.network.end_hub
+                else "B" if hub.zone == Zone.BLOCKED
                 else hub.zone.value[0].capitalize()
             )
             initial: Any = self.font[36].render(
@@ -278,16 +279,26 @@ class GameMap:
 if __name__ == "__main__":
     pygame.init()
     from parser import RawParser
-    # raw = RawParser('test.txt')
-    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    raw = RawParser('test.txt')
+    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    print("RAW")
     from model import MapModel
     model = MapModel(raw)
+    print("MODEL")
     network = Network(model)
+    print("NET")
     from pathfinder import PathFinder
     pathfinder = PathFinder(network)
+    print("PATH")
     simulation = Simulation(network, pathfinder)
+    print("SIM")
     simulation.solver()
+    print("SIM2")
     static = StaticMap(network)
+    print("STATIC")
     animation = Animation(static, simulation)
+    print("ANIME")
     game = GameMap(static, animation)
+    print("GAME")
     game.run_game()
+    print("RUN")
