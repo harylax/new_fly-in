@@ -88,5 +88,5 @@ class Img(Enum):
         )
         sys.exit(1)
 
-    BACKGROUND = pygame.image.load('isometric-city-bg-1600x800-darker.png')
+    BACKGROUND = pygame.image.load('night_city_skyline_3600x800.png')
     DRONE = pygame.image.load('drone-isometric-facing-right.png')

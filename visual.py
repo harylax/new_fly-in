@@ -23,41 +23,25 @@ class StaticMap:
         self.height: int = 600
         self.horizontal_scroll: int = 0
         self.vertical_scroll: int = 0
-        # self.hub_positions: dict[str, tuple[float, float]] = {
-        #     hub.name: self.to_screen(hub.x, hub.y) for hub in network.hubs
-        # }
+
         self.hub_positions: dict[str, tuple[float, float]] = {
             hub.name: (
                 hub.x * 150 + 150,
-                hub.y * 100 + self.height / 2
+                hub.y * 100 + self.height * 0.65
                 ) for hub in network.hubs
         }
-        self.background: Any = pygame.transform.smoothscale(
-            Img.BACKGROUND.value, (self.width, self.height)
-            )
+        self.background: Any = Img.BACKGROUND.value
         self.screen: Any = pygame.display.set_mode((self.width, self.height))
         self.font: dict[int, Any] = {
-            22: pygame.font.SysFont(None, 22),
-            36: pygame.font.SysFont(None, 36)
+            22: pygame.font.SysFont("Arial", 22),
+            36: pygame.font.SysFont("Arial", 36)
         }
-        # self.legend_scroll: int = 30
-        # self.legends: dict[str, Color] = {
-        #     hub.name: hub.color for hub in network.hubs
-        # }
 
     def draw_static(self) -> None:
-        self.screen.blit(self.background, (0, 0))
-
-        # spacing: int = 30
-        # legend_y: int = self.legend_scroll
-        # for name in self.legends:
-        #     pygame.draw.circle(
-        #         self.screen, self.legends[name].rgb,
-        #         (spacing, legend_y), 10
-        #         )
-        #     label: Any = self.font[22].render(name, True, Color.WHITE.rgb)
-        #     self.screen.blit(label, (spacing + 15, legend_y - 8))
-        #     legend_y += spacing
+        self.screen.blit(self.background, (
+            self.horizontal_scroll,
+            self.vertical_scroll
+            ))
 
         for link in self.network.connections:
             if link.origin and link.destination:
@@ -89,31 +73,6 @@ class StaticMap:
             self.screen.blit(initial, initial.get_rect(center=(x, y)))
             label: Any = self.font[22].render(hub.name, True, Color.WHITE.rgb)
             self.screen.blit(label, (x - 35, y - 40))
-
-    # def to_screen(self, x: int, y: int) -> tuple[float, float]:
-    #     margin: int = 150
-
-    #     xs: list[int] = [hub.x for hub in self.network.hubs]
-    #     ys: list[int] = [hub.y for hub in self.network.hubs]
-
-    #     min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
-
-    #     range_x: int = (max_x - min_x) or 1
-    #     range_y: int = (max_y - min_y) or 1
-
-    #     pos_x_ratio: float = (x - min_x) / range_x
-    #     pos_y_ratio: float = (y - min_y) / range_y
-
-    #     width: int = self.width - 2 * margin
-    #     height: int = self.height - 2 * margin
-
-    #     ratio_x_on_screen: float = pos_x_ratio * width
-    #     ratio_y_on_screen: float = pos_y_ratio * height
-
-    #     sx: float = ratio_x_on_screen + margin + 50
-    #     sy: float = ratio_y_on_screen + margin
-
-    #     return (sx, sy)
 
 
 class Animation:
@@ -164,24 +123,6 @@ class Animation:
             tuple[int, str]
         ] = self.drones_moves[next_turn]
 
-        # for drone_id, name in self.drones_moves[self.current_turn]:
-        #     x, y = self.get_position(name)
-        #     x += self.static.horizontal_scroll
-        #     y += self.static.vertical_scroll
-        #     if name == self.network.end_hub.name:
-        #         x += end_count * 20
-        #         end_count += 1
-        #     else:
-        #         if name in count_drawn:
-        #             x += count_drawn[name]
-        #             count_drawn[name] -= 20
-        #         else:
-        #             count_drawn[name] = -20
-        #     self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
-        #     label: Any = self.font[22].render(
-        #         f"D{drone_id}", True, Color.YELLOW.rgb
-        #         )
-        #     self.screen.blit(label, (x, y - 30))
         for (drone_id, prev_name), (_, next_name) in zip(
             prev_state, next_state
         ):
@@ -211,11 +152,13 @@ class GameMap:
     def __init__(self, static: StaticMap, animation: Animation) -> None:
         self.static: StaticMap = static
         self.animation: Animation = animation
+        self.max_scroll: dict[str, int] = {
+            'x': -self.static.background.get_width() + self.static.width,
+            'y': -self.static.background.get_height() + self.static.height
+        }
         self.running: bool = True
         self.paused: bool = True
         self.clock: Any = pygame.time.Clock()
-        # self.progress: int = 0
-        # self.turn_duration: int = 1000
 
     def display_turn_and_status(self) -> None:
         status: str = " [PAUSED]" if self.paused else ""
@@ -260,6 +203,15 @@ class GameMap:
             if keys[pygame.K_RIGHT]:
                 self.static.horizontal_scroll -= 10
 
+            if self.static.horizontal_scroll > 0:
+                self.static.horizontal_scroll = 0
+            if self.static.horizontal_scroll < self.max_scroll['x']:
+                self.static.horizontal_scroll = self.max_scroll['x']
+            if self.static.vertical_scroll > 0:
+                self.static.vertical_scroll = 0
+            if self.static.vertical_scroll < self.max_scroll['y']:
+                self.static.vertical_scroll = self.max_scroll['y']
+
             if (
                 not self.paused
                 and self.animation.current_turn < self.animation.max_turn
@@ -279,8 +231,8 @@ class GameMap:
 if __name__ == "__main__":
     pygame.init()
     from parser import RawParser
-    raw = RawParser('test.txt')
-    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    # raw = RawParser('test.txt')
+    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     print("RAW")
     from model import MapModel
     model = MapModel(raw)

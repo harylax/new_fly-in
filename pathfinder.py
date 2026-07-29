@@ -16,6 +16,9 @@ class PathFinder:
         if self.network.start_hub.zone == Zone.BLOCKED:
             MSGError.print_error("Path Error: 'start_hub' is blocked")
             sys.exit(1)
+        if self.network.end_hub.zone == Zone.BLOCKED:
+            MSGError.print_error("Path Error: 'end_hub' is blocked")
+            sys.exit(1)
 
         try:
             self.bfs_find_unreachable()
