@@ -1,5 +1,18 @@
 from enum import Enum
 import sys
+try:
+    import pygame  # type: ignore
+except ImportError as err:
+    print(
+        "\033[91m"
+        f"Import Error: {err}\n"
+        "Please, install pygame before any run.\n"
+        "Usage:\npython3 -m venv venv"
+        "\nsource venv/bin/activate"
+        "\npython3 -m pip install pygame"
+        "\033[0m"
+    )
+    sys.exit(1)
 
 
 class MSGError:
@@ -75,18 +88,32 @@ class Color(Enum):
         return color_dict[self]
 
 
-class Img(Enum):
-    try:
-        import pygame  # type: ignore
-    except ImportError as err:
-        MSGError.print_error(
-            f"Import Error: {err}\n"
-            "Please, install pygame before any run.\n"
-            "Usage:\npython3 -m venv venv"
-            "\nsource venv/bin/activate"
-            "\npython3 -m pip install pygame"
-        )
-        sys.exit(1)
+class MapFile:
+    def __init__(self) -> None:
+        self.easy: dict[int, str] = {
+            1: "maps/easy/01_linear_path.txt",
+            2: "maps/easy/02_simple_fork.txt",
+            3: "maps/easy/03_basic_capacity.txt"
+        }
+        self.medium: dict[int, str] = {
+            1: "maps/medium/01_dead_end_trap.txt",
+            2: "maps/medium/02_circular_loop.txt",
+            3: "maps/medium/03_priority_puzzle.txt"
+        }
+        self.hard: dict[int, str] = {
+            1: "maps/hard/01_maze_nightmare.txt",
+            2: "maps/hard/02_capacity_hell.txt",
+            3: "maps/hard/03_ultimate_challenge.txt"
+        }
+        self.challenger: dict[int, str] = {
+            1: "maps/challenger/01_the_impossible_dream.txt"
+        }
 
+
+class Img(Enum):
     BACKGROUND = pygame.image.load('night_city_skyline_3600x800.png')
     DRONE = pygame.image.load('drone-isometric-facing-right.png')
+
+
+if __name__ == "__main__":
+    print(MapFile().hard[2])

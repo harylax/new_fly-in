@@ -18,6 +18,7 @@ from typing import Any
 
 class StaticMap:
     def __init__(self, network: Network) -> None:
+        pygame.init()
         self.network: Network = network
         self.width: int = 1200
         self.height: int = 600
@@ -60,7 +61,10 @@ class StaticMap:
             x, y = self.hub_positions[hub.name]
             x += self.horizontal_scroll
             y += self.vertical_scroll
-            pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
+            if hub.color == Color.NONE:
+                pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20, 2)
+            else:
+                pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
             letter: str = (
                 "S" if hub == self.network.start_hub
                 else "G" if hub == self.network.end_hub
@@ -231,8 +235,8 @@ class GameMap:
 if __name__ == "__main__":
     pygame.init()
     from parser import RawParser
-    # raw = RawParser('test.txt')
-    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    raw = RawParser('test.txt')
+    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     print("RAW")
     from model import MapModel
     model = MapModel(raw)
