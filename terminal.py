@@ -124,7 +124,7 @@ class Menu:
             for drone_id, zone_name in move:
                 for link in connections:
                     if zone_name == link.name:
-                        line += f"D{drone_id}-{zone_name} "
+                        line += f"D{drone_id}-{zone_name} [CONNECTION] "
                 for hub in hubs:
                     if zone_name == hub.name:
                         try:
