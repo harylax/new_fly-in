@@ -131,13 +131,15 @@ class Menu:
                             ansi: str = Ansi[hub.color.name].value
                         except KeyError:
                             ansi = Ansi.WHITE.value
+                        zone: str = (
+                            'START' if hub == hubs[0]
+                            else 'GOAL' if hub == hubs[-1]
+                            else hub.zone.name
+                        )
                         line += (
                             f"{ansi}D{drone_id}-"
-                            f"{zone_name} "
-                            f"[{
-                                'START' if hub == hubs[0]
-                                else 'GOAL' if hub == hubs[-1]
-                                else hub.zone.name}] "
+                            f"{zone_name}"
+                            f" [{zone}] "
                             f"{Ansi.RESET.value}"
                             )
             result.append(f"turn {i}: {line}")
