@@ -12,9 +12,6 @@ from visual import GameMap
 
 class Menu:
     def __init__(self) -> None:
-        ##########################
-        self.visual: bool = True
-        ##########################
         self.title: str = (
             "╔════════════════════════════════════════════════════╗\n"
             "║                                                    ║\n"
@@ -25,7 +22,7 @@ class Menu:
             "║    ██║     ███████╗   ██║         ██║██║ ╚████║    ║\n"
             "║    ╚═╝     ╚══════╝   ╚═╝         ╚═╝╚═╝  ╚═══╝    ║\n"
             "║                                                    ║\n"
-            "║                 42 Drone Simulation                ║\n"
+            "║         42 Drone Simulation - by haryandr          ║\n"
             "╚════════════════════════════════════════════════════╝"
         )
         self.main_menu: str = (
@@ -136,7 +133,12 @@ class Menu:
                             ansi = Ansi.WHITE.value
                         line += (
                             f"{ansi}D{drone_id}-"
-                            f"{zone_name} {Ansi.RESET.value}"
+                            f"{zone_name} "
+                            f"[{
+                                'START' if hub == hubs[0]
+                                else 'GOAL' if hub == hubs[-1]
+                                else hub.zone.name}] "
+                            f"{Ansi.RESET.value}"
                             )
             result.append(f"turn {i}: {line}")
 
@@ -165,11 +167,10 @@ class Menu:
 
         for line in output:
             print(line)
-        if self.visual:
-            static: StaticMap = StaticMap(network)
-            animation: Animation = Animation(static, simulation)
-            game: GameMap = GameMap(static, animation)
-            game.run_game()
+        static: StaticMap = StaticMap(network)
+        animation: Animation = Animation(static, simulation)
+        game: GameMap = GameMap(static, animation)
+        game.run_game()
         self.quit()
 
     def choose_difficulty(self) -> None:
@@ -283,10 +284,6 @@ class Menu:
                 self.quit()
 
 
-def main() -> None:
+if __name__ == "__main__":
     menu: Menu = Menu()
     menu.run_terminal()
-
-
-if __name__ == "__main__":
-    main()

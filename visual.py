@@ -61,10 +61,7 @@ class StaticMap:
             x, y = self.hub_positions[hub.name]
             x += self.horizontal_scroll
             y += self.vertical_scroll
-            if hub.color == Color.NONE:
-                pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20, 2)
-            else:
-                pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
+            pygame.draw.circle(self.screen, hub.color.rgb, (x, y), 20)
             letter: str = (
                 "S" if hub == self.network.start_hub
                 else "G" if hub == self.network.end_hub
