@@ -27,10 +27,7 @@ class PathFinder:
             sys.exit(1)
 
         self.paths: list[list[str]] = sorted(
-            self.dfs_path(), key=lambda path: (
-                -self.count_path_priority(path),
-                self.compute_path_cost(path),
-            )
+            self.dfs_path(), key=self.compute_path_cost
         )
 
     def is_dead_end(self, hub: Hub) -> bool:
@@ -93,35 +90,54 @@ class PathFinder:
 
         return res
 
-    def compute_path_cost(self, path: list[str]) -> int:
-        cost: int = 0
+    def compute_path_cost(self, path: list[str]) -> float:
+        cost: float = 0.0
         for hub in self.network.hubs:
             if hub.name in path:
                 cost += hub.cost
         return cost
 
-    def count_path_priority(self, path: list[str]) -> int:
-        count: int = 0
-        for hub in self.network.hubs:
-            if hub.zone == Zone.PRIORITY and hub.name in path:
-                count += 1
-        return count
-
-    def sorted_hubs(self, hubs: list[Hub]) -> list[Hub]:
+    def sorted_hubs_by_cost_and_current_capacity(
+            self, hubs: list[Hub]
+            ) -> list[Hub]:
         best_path: list[str] = self.paths[0]
         return sorted(
             hubs,
             key=lambda hub: (
+                # -self.path_capacity_of_a_hub(hub),
                 0 if hub.name in best_path else 1,
-                0 if hub.zone == Zone.PRIORITY else 1
             )
         )
+
+    def compute_path_capacity(self, path: list[str]) -> float:
+        capacities: int = 0
+        max_drones: int = 0
+        for name in path:
+            for hub in self.network.hubs:
+                if name == hub.name:
+                    capacities += hub.current_capacity
+                    max_drones += hub.max_drones
+                    break
+        return capacities / max_drones
+
+    def paths_current_capacities(self) -> list[tuple[list[str], float]]:
+        res: list[tuple[list[str], float]] = []
+        for path in self.paths:
+            res.append((path, self.compute_path_capacity(path)))
+        return res
+
+    def path_capacity_of_a_hub(self, hub: Hub) -> float:
+        for path, capacity in self.paths_current_capacities():
+            for name in path:
+                if name == hub.name:
+                    return capacity
+        return float('inf')
 
 
 if __name__ == "__main__":
     from parser import RawParser
-    # raw = RawParser('test.txt')
-    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    raw = RawParser('maps/default/01_default_map.txt')
+    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     map_model = MapModel(raw)
     network = Network(map_model)
@@ -137,4 +153,4 @@ if __name__ == "__main__":
     for k, hubs in enumerate(pathfinder.paths, start=1):
         print(f"Cost path {k}: {pathfinder.compute_path_cost(hubs)}")
 
-    print(pathfinder.paths[0])
+    # print(pathfinder.paths[0])

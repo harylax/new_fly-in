@@ -52,7 +52,18 @@ class Simulation:
             for hub in reversed(self.network.hubs):
                 if self.pathfinder.is_dead_end(hub):
                     continue
-                for prev in self.pathfinder.sorted_hubs(hub.previous_hubs):
+                best_path_for_this_turn: list[str] = self.pathfinder.paths[0]
+                for path in self.pathfinder.paths:
+                    if (
+                        self.pathfinder.compute_path_capacity(path) < 0.3
+                    ):
+                        continue
+                    best_path_for_this_turn = path
+                    break
+                for prev in sorted(hub.previous_hubs, key=lambda hub: (
+                    0 if hub.name in best_path_for_this_turn else 1,
+                    )
+                ):
                     if self.pathfinder.is_dead_end(prev):
                         continue
                     if not prev.current_drones:
