@@ -26,7 +26,7 @@ class PathFinder:
             MSGError.print_error(f"Path Error: {err}")
             sys.exit(1)
 
-        self.paths: list[list[Hub]] = sorted(
+        self.paths: list[list[str]] = sorted(
             self.dfs_path(), key=self.compute_path_cost
         )
 
@@ -60,7 +60,7 @@ class PathFinder:
         if self.network.start_hub in unvisited:
             raise PathError("no path found")
 
-    def dfs_path(self) -> list[list[Hub]]:
+    def dfs_path(self) -> list[list[str]]:
         res: list[list[str]] = []
         path: list[str] = []
         visited: set[str] = set()
@@ -88,22 +88,51 @@ class PathFinder:
             MSGError.print_error("Map Error: no path found")
             sys.exit(1)
 
-        final: list[list[Hub]] = []
-        for line in res:
-            path_hub: list[Hub] = []
-            for name in line:
-                for hub in self.network.hubs:
-                    if name == hub.name:
-                        path_hub.append(hub)
-            final.append(path_hub)
-        return final
+        return res
 
-    def compute_path_cost(self, path: list[Hub]) -> float:
+    def compute_path_cost(self, path: list[str]) -> float:
         cost: float = 0.0
         for hub in self.network.hubs:
-            if hub in path:
+            if hub.name in path:
                 cost += hub.cost
         return cost
+
+    def sorted_hubs_by_cost_and_current_capacity(
+            self, hubs: list[Hub]
+            ) -> list[Hub]:
+        best_path: list[str] = self.paths[0]
+        return sorted(
+            hubs,
+            key=lambda hub: (
+                # -self.path_capacity_of_a_hub(hub),
+                0 if hub.name in best_path else 1,
+            )
+        )
+
+    def compute_path_capacity(self, path: list[str]) -> float:
+        capacities: int = 0
+        max_drones: int = 0
+        for name in path:
+            for hub in self.network.hubs:
+                if name == hub.name:
+                    capacities += hub.current_capacity
+                    max_drones += hub.max_drones
+                    break
+        return capacities / max_drones
+
+    def paths_current_capacities(self) -> list[tuple[list[str], float]]:
+        res: list[tuple[list[str], float]] = []
+        for path in self.paths:
+            res.append((path, self.compute_path_capacity(path)))
+        return res
+
+    def path_capacity_of_a_hub(self, hub: Hub) -> float:
+        for path, capacity in self.paths_current_capacities():
+            for name in path:
+                if name == hub.name:
+                    return capacity
+        return float('inf')
+
 
 if __name__ == "__main__":
     from parser import RawParser
