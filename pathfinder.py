@@ -27,8 +27,11 @@ class PathFinder:
             sys.exit(1)
 
         self.paths: list[list[str]] = sorted(
-            self.dfs_path(), key=self.compute_path_cost
+            self.dfs_path(), key=lambda path: (
+                -self.count_path_priority(path),
+                self.compute_path_cost(path),
             )
+        )
 
     def is_dead_end(self, hub: Hub) -> bool:
         if hub == self.network.end_hub:
@@ -97,15 +100,21 @@ class PathFinder:
                 cost += hub.cost
         return cost
 
+    def count_path_priority(self, path: list[str]) -> int:
+        count: int = 0
+        for hub in self.network.hubs:
+            if hub.zone == Zone.PRIORITY and hub.name in path:
+                count += 1
+        return count
+
     def sorted_hubs(self, hubs: list[Hub]) -> list[Hub]:
         best_path: list[str] = self.paths[0]
         return sorted(
             hubs,
             key=lambda hub: (
-                hub.name in best_path,
-                hub.zone == Zone.PRIORITY
-            ),
-            reverse=True
+                0 if hub.name in best_path else 1,
+                0 if hub.zone == Zone.PRIORITY else 1
+            )
         )
 
 
@@ -127,3 +136,5 @@ if __name__ == "__main__":
     print()
     for k, hubs in enumerate(pathfinder.paths, start=1):
         print(f"Cost path {k}: {pathfinder.compute_path_cost(hubs)}")
+
+    print(pathfinder.paths[0])

@@ -8,7 +8,7 @@ except ImportError as err:
     MSGError.print_error(
         f"Import Error: {err}\n"
         "Please, install pydantic before any run.\n"
-        "Usage:\npython3 -m venv venv"
+        "Usage:\npython3 -m venv .venv"
         "\nsource venv/bin/activate"
         "\npython3 -m pip install pydantic"
     )

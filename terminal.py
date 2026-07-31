@@ -53,7 +53,7 @@ class Menu:
             "Easy maps\n\n"
             "\t[1] Linear path\n"
             "\t[2] Simple fork\n"
-            "\t[3] Linear path\n"
+            "\t[3] Basic capacity\n"
             f"{Ansi.RESET.value}"
             "\n\t[0] ← Back\n"
             "──────────────────────────────────────────────────────\n"
@@ -102,12 +102,12 @@ class Menu:
         sys.exit(0)
 
     def default_map(self) -> None:
-        self.launch(MapFile().easy[1])
+        self.launch(MapFile().default[1])
 
     def custom_map(self) -> None:
         print(Ansi.CLEAR.value, end="")
-        print(self.main_menu)
         print(f"{self.title}")
+        print(self.main_menu)
         print("Enter your map path\n")
         path: str = input("Path > ")
         self.launch(path)
@@ -119,27 +119,31 @@ class Menu:
             connections: list[Connection]
             ) -> list[str]:
         result: list[str] = []
-        for i, move in enumerate(moves):
+        last_track: list[tuple[int, str]] = []
+        for i in range(1, len(moves[1:-1])):
             line = ''
-            for drone_id, zone_name in move:
+            last_track.clear()
+            if i > 1:
+                last_track.extend(moves[i - 1])
+            for drone_id, zone_name in moves[i]:
+                if (drone_id, zone_name) in last_track:
+                    continue
+
                 for link in connections:
                     if zone_name == link.name:
                         line += f"D{drone_id}-{zone_name} [CONNECTION] "
                 for hub in hubs:
+                    if hub in [hubs[0], hubs[-1]]:
+                        continue
                     if zone_name == hub.name:
                         try:
                             ansi: str = Ansi[hub.color.name].value
                         except KeyError:
                             ansi = Ansi.WHITE.value
-                        zone: str = (
-                            'START' if hub == hubs[0]
-                            else 'GOAL' if hub == hubs[-1]
-                            else hub.zone.name
-                        )
                         line += (
                             f"{ansi}D{drone_id}-"
                             f"{zone_name}"
-                            f" [{zone}] "
+                            f" [{hub.zone.name}] "
                             f"{Ansi.RESET.value}"
                             )
             result.append(f"turn {i}: {line}")
@@ -164,15 +168,27 @@ class Menu:
         output: list[str] = self.simulation_output(
             simulation.drones_moves, network.hubs, network.connections
             )
+        while True:
+            print(Ansi.CLEAR.value, end="")
+            print(f"{self.title}")
+            print(
+                "──────────────────────────────────────────────────────\n"
+                "Do you want to enable graphical animation?"
+                )
+            choice: str = input("\nYour choice [Y/n] ").strip().lower()
+            if choice in ['y', 'yes', 'n', 'no']:
+                break
 
         print(Ansi.CLEAR.value, end="")
 
         for line in output:
             print(line)
-        static: StaticMap = StaticMap(network)
-        animation: Animation = Animation(static, simulation)
-        game: GameMap = GameMap(static, animation)
-        game.run_game()
+
+        if choice in ['y', 'yes']:
+            static: StaticMap = StaticMap(network)
+            animation: Animation = Animation(static, simulation)
+            game: GameMap = GameMap(static, animation)
+            game.run_game()
         self.quit()
 
     def choose_difficulty(self) -> None:

@@ -21,6 +21,11 @@ class RawParser:
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
+        try:
+            self.check_duplicates_connections()
+        except ParsingError as err:
+            MSGError.print_error(f"Parsing Error: {err}")
+            sys.exit(1)
 
     def parse_to_raw_list(self) -> list[str]:
         try:
@@ -222,6 +227,20 @@ class RawParser:
             except ParsingError as err:
                 MSGError.print_error(f"Parsing Error: {err}")
                 sys.exit(1)
+
+    def check_duplicates_connections(self) -> None:
+        for i in range(len(self.connections)):
+            _, origin1, dest1, _ = self.connections[i]
+            for j in range(i + 1, len(self.connections)):
+                _, origin2, dest2, _ = self.connections[j]
+                if (
+                    (origin1, dest1) == (origin2, dest2)
+                    or (origin1, dest1) == (dest2, origin2)
+                ):
+                    raise ParsingError(
+                        "duplicates connections detected: "
+                        f"{origin1}-{dest1} and {origin2}-{dest2}"
+                        )
 
 
 if __name__ == "__main__":

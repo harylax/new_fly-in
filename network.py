@@ -25,6 +25,7 @@ class Hub:
             else 2 if hub.zone == Zone.RESTRICTED
             else 1
         )
+        # self.cost: int = 999999
         self.current_capacity: int = 0
         self.compute_hub_capacity()
 

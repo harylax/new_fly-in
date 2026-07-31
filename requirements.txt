@@ -1,0 +1,5 @@
+pygame
+pydantic
+flake8
+flake8-docstring
+mypy

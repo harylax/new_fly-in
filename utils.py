@@ -7,7 +7,7 @@ except ImportError as err:
         "\033[91m"
         f"Import Error: {err}\n"
         "Please, install pygame before any run.\n"
-        "Usage:\npython3 -m venv venv"
+        "Usage:\npython3 -m venv .venv"
         "\nsource venv/bin/activate"
         "\npython3 -m pip install pygame"
         "\033[0m"
@@ -90,6 +90,9 @@ class Color(Enum):
 
 class MapFile:
     def __init__(self) -> None:
+        self.default: dict[int, str] = {
+            1: "maps/default/01_default_map.txt"
+        }
         self.easy: dict[int, str] = {
             1: "maps/easy/01_linear_path.txt",
             2: "maps/easy/02_simple_fork.txt",

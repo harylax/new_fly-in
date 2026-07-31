@@ -8,7 +8,7 @@ except ImportError as err:
     MSGError.print_error(
         f"Import Error: {err}\n"
         "Please, install pygame before any run.\n"
-        "Usage:\npython3 -m venv venv"
+        "Usage:\npython3 -m venv .venv"
         "\nsource venv/bin/activate"
         "\npython3 -m pip install pygame"
     )
@@ -136,9 +136,12 @@ class Animation:
             if prev_name == self.network.end_hub.name:
                 x += end_count * 25
                 end_count += 1
+            elif prev_name == self.network.start_hub.name:
+                x -= end_count * 25
+                end_count += 1
             else:
                 if prev_name in count_drawn:
-                    x += count_drawn[prev_name]
+                    y += count_drawn[prev_name]
                     count_drawn[prev_name] -= 25
                 else:
                     count_drawn[prev_name] = -25

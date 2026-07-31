@@ -49,7 +49,6 @@ class Simulation:
         while len(self.network.end_hub.current_drones) != nb_drones:
 
             restricted: dict[str, list[Drone]] = self.restricted_drones()
-
             for hub in reversed(self.network.hubs):
                 if self.pathfinder.is_dead_end(hub):
                     continue
