@@ -105,23 +105,18 @@ class PathFinder:
                 cost += hub.cost
         return cost
 
+
 if __name__ == "__main__":
     from parser import RawParser
-    raw = RawParser('maps/default/01_default_map.txt')
-    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    # raw = RawParser('maps/default/01_default_map.txt')
+    # raw = RawParser('maps/medium/02_circular_loop.txt')
+    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     map_model = MapModel(raw)
     network = Network(map_model)
     pathfinder = PathFinder(network)
 
-    for i, hubs in enumerate(pathfinder.paths, start=1):
-        print(f"\nPath n{i}:")
-        for j, name in enumerate(hubs, start=1):
-            for hub in network.hubs:
-                if hub.name == name:
-                    print(f"hub {j}: {name} - {hub.cost}")
-    print()
-    for k, hubs in enumerate(pathfinder.paths, start=1):
-        print(f"Cost path {k}: {pathfinder.compute_path_cost(hubs)}")
-
-    # print(pathfinder.paths[0])
+    for i, path in enumerate(pathfinder.paths, start=1):
+        print(f"path {i} - cost {pathfinder.compute_path_cost(path)}")
+        for hub in path:
+            print(f"\t{hub.name}={hub.cost}")
