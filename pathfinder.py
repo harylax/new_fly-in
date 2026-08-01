@@ -99,24 +99,37 @@ class PathFinder:
         return final
 
     def compute_path_cost(self, path: list[Hub]) -> float:
-        cost: float = 0.0
-        for hub in self.network.hubs:
-            if hub in path:
-                cost += hub.cost
-        return cost
+        return sum(hub.cost for hub in path)
+
+    # def compute_path_capacity(self, path: list[Hub]) -> int:
+    #     return sum(hub.current_capacity for hub in path)
+
+    # def compute_average_path_capacity(self) -> int:
+    #     return sum(self.compute_path_capacity(path) for path in self.paths) // len(self.paths)
+
+    # def count_drones_in_path(self, path: list[Hub]) -> int:
+    #     return sum(
+    #         len(hub.current_drones) for hub in path
+    #         if hub not in [self.network.start_hub, self.network.end_hub]
+    #         )
+
+    # def count_drones_in_map(self) -> int:
+    #     return sum(
+    #         len(hub.current_drones) for hub in self.network.hubs
+    #         if hub not in [self.network.start_hub, self.network.end_hub]
+    #         )
 
 
 if __name__ == "__main__":
     from parser import RawParser
-    # raw = RawParser('maps/default/01_default_map.txt')
+    raw = RawParser('maps/default/01_default_map.txt')
     # raw = RawParser('maps/medium/02_circular_loop.txt')
-    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
+    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     map_model = MapModel(raw)
     network = Network(map_model)
     pathfinder = PathFinder(network)
 
-    for i, path in enumerate(pathfinder.paths, start=1):
-        print(f"path {i} - cost {pathfinder.compute_path_cost(path)}")
-        for hub in path:
-            print(f"\t{hub.name}={hub.cost}")
+    for i, path in enumerate(pathfinder.paths):
+        print(f"path {i}:")
+        print(' - '.join(hub.name for hub in path))

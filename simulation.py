@@ -46,6 +46,12 @@ class Simulation:
     def move_drones(self, unmoved: set[int]) -> None:
         moved: set[int] = set()
         for path in self.pathfinder.paths:
+            # if self.pathfinder.count_drones_in_path(path) \
+            #         > self.network.nb_drones * 0.8:
+            #     continue
+            # if self.pathfinder.compute_path_capacity(path) \
+            #         < self.pathfinder.compute_average_path_capacity():
+            #     continue
             if len(moved) == self.network.nb_drones:
                 break
             for i in range(len(path) - 1, 0, -1):
@@ -55,32 +61,6 @@ class Simulation:
                     continue
                 if hub == self.network.start_hub:
                     break
-                # if hub.zone is Zone.RESTRICTED and all(nxt.zone is Zone.RESTRICTED for nxt in hub.next_hubs):
-                #     for link in self.network.connections:
-                #         if link.destination is not hub and link.origin == prev:
-                #             if not link.destination or self.pathfinder.is_dead_end(link.destination):
-                #                 continue
-                #             while True:
-                #                 candidates = [
-                #                     dr for dr in prev.current_drones
-                #                     if dr.id not in moved
-                #                 ]
-                #                 capacity = min(
-                #                     link.current_capacity,
-                #                     link.destination.current_capacity,
-                #                     len(candidates)
-                #                     )
-                #                 if capacity <= 0 or not candidates:
-                #                     break
-                #                 drone = candidates[0]
-                #                 prev.current_drones.remove(drone)
-                #                 link.destination.current_drones.append(drone)
-                #                 drone.zone = hub
-                #                 link.compute_link_capacity()
-                #                 prev.compute_hub_capacity()
-                #                 link.destination.compute_hub_capacity()
-                #                 moved.add(drone.id)
-                #                 unmoved.remove(drone.id)
                 if hub.zone is Zone.RESTRICTED:
                     for link in self.network.connections:
                         if link.destination == hub and link.origin == prev:

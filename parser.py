@@ -1,6 +1,7 @@
 from utils import MSGError
 import sys
 from typing import Any
+import tarfile
 
 
 class ParsingError(Exception):
@@ -28,6 +29,17 @@ class RawParser:
             sys.exit(1)
 
     def parse_to_raw_list(self) -> list[str]:
+        content: Any | None = None
+        try:
+            with tarfile.open('maps.tar.gz') as tar:
+                f: Any = tar.extractfile(self.path)
+                content = f.read().decode().split('\n')
+        except (OSError, KeyError):
+            pass
+
+        if content:
+            return content
+
         try:
             with open(self.path) as f:
                 return f.read().split('\n')
