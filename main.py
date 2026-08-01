@@ -15,7 +15,8 @@ class Main:
 
 
 if __name__ == "__main__":
-    try:
-        Main().run()
-    except Exception as err:
-        MSGError.print_error(f"Unexpected Error: {err}")
+    # try:
+    #     Main().run()
+    # except Exception as err:
+    #     MSGError.print_error(f"Unexpected Error: {err}")
+    Main().run()

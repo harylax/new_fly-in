@@ -120,7 +120,7 @@ class Menu:
             ) -> list[str]:
         result: list[str] = []
         last_track: list[tuple[int, str]] = []
-        for i in range(1, len(moves[1:-1])):
+        for i in range(1, len(moves[:-1])):
             line = ''
             last_track.clear()
             if i > 1:

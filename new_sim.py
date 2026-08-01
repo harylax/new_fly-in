@@ -211,7 +211,3 @@ if __name__ == "__main__":
 
     for line in res:
         print(line)
-    print(len(sim.drones_moves))
-    print(sim.network.end_hub.current_drones)   # devrait être vide []
-    print(sim.network.end_hub is sim.network.start_hub)   # devrait être False
-    print(sim.network.nb_drones)   # devrait être 2

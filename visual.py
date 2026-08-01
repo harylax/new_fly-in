@@ -199,9 +199,9 @@ class GameMap:
 
             keys: Any = pygame.key.get_pressed()
             if keys[pygame.K_DOWN]:
-                self.static.vertical_scroll += 5
-            if keys[pygame.K_UP]:
                 self.static.vertical_scroll -= 5
+            if keys[pygame.K_UP]:
+                self.static.vertical_scroll += 5
             if keys[pygame.K_LEFT]:
                 self.static.horizontal_scroll += 10
             if keys[pygame.K_RIGHT]:
@@ -235,26 +235,18 @@ class GameMap:
 if __name__ == "__main__":
     pygame.init()
     from parser import RawParser
-    raw = RawParser('test.txt')
-    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
-    print("RAW")
+    # raw = RawParser('test.txt')
+    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
     from model import MapModel
     model = MapModel(raw)
-    print("MODEL")
     network = Network(model)
-    print("NET")
     from pathfinder import PathFinder
     pathfinder = PathFinder(network)
-    print("PATH")
     simulation = Simulation(network, pathfinder)
-    print("SIM")
     simulation.solver()
-    print("SIM2")
     static = StaticMap(network)
-    print("STATIC")
     animation = Animation(static, simulation)
-    print("ANIME")
     game = GameMap(static, animation)
-    print("GAME")
-    game.run_game()
-    print("RUN")
+    print(f"max turn de simulation: {len(simulation.drones_moves) - 1}")
+    print(f"max turn de visual: {animation.max_turn}")
+    # game.run_game()
