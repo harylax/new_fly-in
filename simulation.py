@@ -55,34 +55,52 @@ class Simulation:
                     continue
                 if hub == self.network.start_hub:
                     break
-                for link in self.network.connections:
-                    if link.destination == hub and link.origin == prev:
-                        while True:
-                            candidates: list[Drone] = [
-                                dr for dr in link.origin.current_drones
-                                if dr.id not in moved
-                            ]
-                            if not candidates:
-                                break
-                            capacity: int = min(
-                                link.current_capacity,
-                                hub.current_capacity,
-                                len(candidates)
-                                )
-                            if not capacity:
-                                break
-                            drone: Drone = candidates.pop(0)
-                            prev.current_drones.remove(drone)
-                            if hub.zone == Zone.RESTRICTED:
+                if hub.zone is Zone.RESTRICTED:
+                    for link in self.network.connections:
+                        if link.destination == hub and link.origin == prev:
+                            while True:
+                                candidates: list[Drone] = [
+                                    dr for dr in prev.current_drones
+                                    if dr.id not in moved
+                                ]
+                                capacity: int = min(
+                                    link.current_capacity,
+                                    hub.current_capacity,
+                                    len(candidates)
+                                    )
+                                if capacity <= 0 or not candidates:
+                                    break
+                                drone: Drone = candidates[0]
+                                prev.current_drones.remove(drone)
                                 link.current_drones.append(drone)
                                 drone.zone = link
                                 link.compute_link_capacity()
-                            else:
+                                prev.compute_hub_capacity()
+                                hub.compute_hub_capacity()
+                                moved.add(drone.id)
+                else:
+                    for link in self.network.connections:
+                        if link.destination == hub and link.origin == prev:
+                            while True:
+                                candidates = [
+                                    dr for dr in prev.current_drones
+                                    if dr.id not in moved
+                                ]
+                                capacity = min(
+                                    link.current_capacity,
+                                    hub.current_capacity,
+                                    len(candidates)
+                                    )
+                                if capacity <= 0 or not candidates:
+                                    break
+                                drone = candidates[0]
+                                prev.current_drones.remove(drone)
                                 hub.current_drones.append(drone)
                                 drone.zone = hub
+                                link.compute_link_capacity()
+                                prev.compute_hub_capacity()
                                 hub.compute_hub_capacity()
-                            prev.compute_hub_capacity()
-                            moved.add(drone.id)
+                                moved.add(drone.id)
 
     def solver(self) -> None:
         turn: int = 0
@@ -92,7 +110,15 @@ class Simulation:
             restricted: dict[str, list[Drone]] = self.restricted_drones()
             self.move_drones()
             self.free_drones(restricted)
-
+            # for hub in self.network.hubs:
+            #     if hub.current_drones and hub.name in [
+            #         'maze_loop1', 'maze_loop2', 'maze_loop3', 'maze_loop4'
+            #     ]:
+            #         print(
+            #             f"turn {turn}: name={hub.name}, "
+            #             f"len_current_drones={len(hub.current_drones)}, "
+            #             f"capacity={hub.current_capacity} max={hub.max_drones}"
+            #             )
             turn += 1
 
             self.drones_moves.append(self.snapshot())
@@ -111,7 +137,7 @@ if __name__ == "__main__":
     hard4 = 'maps/challenger/01_the_impossible_dream.txt'
 
     from parser import RawParser
-    raw = RawParser(hard4)
+    raw = RawParser(hard3)
     from model import MapModel
     model = MapModel(raw)
     network = Network(model)
@@ -119,12 +145,12 @@ if __name__ == "__main__":
     sim = Simulation(network, pathfinder)
     sim.solver()
 
-    result: list[str] = []
-    for i, moves in enumerate(sim.drones_moves):
-        line = ''
-        for drone_id, hub_name in moves:
-            line += f"D{drone_id}-{hub_name} "
-        result.append(f"turn {i}: {line}")
+    # result: list[str] = []
+    # for i, moves in enumerate(sim.drones_moves):
+    #     line = ''
+    #     for drone_id, hub_name in moves:
+    #         line += f"D{drone_id}-{hub_name} "
+    #     result.append(f"turn {i}: {line}")
 
-    for res in result:
-        print(res)
+    # for res in result:
+    #     print(res)

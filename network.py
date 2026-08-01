@@ -20,6 +20,7 @@ class Hub:
         self.current_drones: list[Drone] = []
         self.previous_hubs: list[Hub] = []
         self.next_hubs: list[Hub] = []
+        self.previous_connections: list[Connection] = []
         self.cost: float = (
             float('inf') if hub.zone == Zone.BLOCKED
             else 2.0 if hub.zone == Zone.RESTRICTED
@@ -30,7 +31,14 @@ class Hub:
         self.compute_hub_capacity()
 
     def compute_hub_capacity(self) -> None:
-        self.current_capacity = self.max_drones - len(self.current_drones)
+        in_transit: int = 0
+        if self.zone == Zone.RESTRICTED:
+            in_transit = sum(
+                len(link.current_drones) for link in self.previous_connections
+            )
+        self.current_capacity = (
+            self.max_drones - len(self.current_drones) - in_transit
+            )
 
 
 class Connection:
@@ -95,6 +103,7 @@ class Network:
                     link.origin = hub
                 if hub.name == destination_name:
                     link.destination = hub
+                    hub.previous_connections.append(link)
 
     def __str__(self) -> str:
         hubs_str: str = ''
@@ -126,7 +135,17 @@ class Network:
 
 if __name__ == "__main__":
     from parser import RawParser
-    raw = RawParser('test.txt')
+    raw = RawParser('maps/default/01_default_map.txt')
     map_model = MapModel(raw)
     game_map = Network(map_model)
-    print(game_map)
+    # print(game_map)
+    for hub in game_map.hubs:
+        if not hub.previous_connections:
+            continue
+        print(hub.name)
+        if len(hub.previous_connections) == 1:
+            print("previous link:")
+        else:
+            print("previous links:")
+        for link in hub.previous_connections:
+            print(f"\t{link.name}")
