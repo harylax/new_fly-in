@@ -43,20 +43,14 @@ class PathFinder:
 
         while queue:
             current: Hub = queue.popleft()
-
             if current not in unvisited:
                 continue
-
             unvisited.remove(current)
-
             if current.zone == Zone.BLOCKED:
                 continue
-
             for previous in current.previous_hubs:
                 queue.append(previous)
-
         self.unreachable = {hub.name for hub in unvisited}
-
         if self.network.start_hub in unvisited:
             raise PathError("no path found")
 
@@ -100,24 +94,6 @@ class PathFinder:
 
     def compute_path_cost(self, path: list[Hub]) -> float:
         return sum(hub.cost for hub in path)
-
-    # def compute_path_capacity(self, path: list[Hub]) -> int:
-    #     return sum(hub.current_capacity for hub in path)
-
-    # def compute_average_path_capacity(self) -> int:
-    #     return sum(self.compute_path_capacity(path) for path in self.paths) // len(self.paths)
-
-    # def count_drones_in_path(self, path: list[Hub]) -> int:
-    #     return sum(
-    #         len(hub.current_drones) for hub in path
-    #         if hub not in [self.network.start_hub, self.network.end_hub]
-    #         )
-
-    # def count_drones_in_map(self) -> int:
-    #     return sum(
-    #         len(hub.current_drones) for hub in self.network.hubs
-    #         if hub not in [self.network.start_hub, self.network.end_hub]
-    #         )
 
 
 if __name__ == "__main__":

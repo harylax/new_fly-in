@@ -29,5 +29,5 @@ lint:
 		--check-untyped-defs \
 
 lint-strict:
-    .venv/bin/flake8 . --exclude venv
-    .venv/bin/mypy . --strict
+	.venv/bin/flake8 . --exclude venv
+	.venv/bin/mypy . --strict

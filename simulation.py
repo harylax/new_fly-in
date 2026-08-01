@@ -45,13 +45,7 @@ class Simulation:
 
     def move_drones(self, unmoved: set[int]) -> None:
         moved: set[int] = set()
-        for path in self.pathfinder.paths:
-            # if self.pathfinder.count_drones_in_path(path) \
-            #         > self.network.nb_drones * 0.8:
-            #     continue
-            # if self.pathfinder.compute_path_capacity(path) \
-            #         < self.pathfinder.compute_average_path_capacity():
-            #     continue
+        for path in self.pathfinder.paths[:15]:
             if len(moved) == self.network.nb_drones:
                 break
             for i in range(len(path) - 1, 0, -1):
@@ -110,62 +104,6 @@ class Simulation:
                                 moved.add(drone.id)
                                 unmoved.remove(drone.id)
 
-    def traffic_jam(self, unmoved: set[int]) -> None:
-        for hub in reversed(self.network.hubs):
-            if self.pathfinder.is_dead_end(hub):
-                continue
-            for prev in hub.previous_hubs:
-                if self.pathfinder.is_dead_end(prev):
-                    continue
-                if not prev.current_drones:
-                    continue
-                if hub.zone is Zone.RESTRICTED:
-                    for link in self.network.connections:
-                        if link.destination == hub and link.origin == prev:
-                            while True:
-                                candidates: list[Drone] = [
-                                    dr for dr in prev.current_drones
-                                    if dr.id in unmoved
-                                ]
-                                capacity: int = min(
-                                    link.current_capacity,
-                                    hub.current_capacity,
-                                    len(candidates)
-                                    )
-                                if capacity <= 0 or not candidates:
-                                    break
-                                drone: Drone = candidates[0]
-                                prev.current_drones.remove(drone)
-                                link.current_drones.append(drone)
-                                drone.zone = link
-                                link.compute_link_capacity()
-                                prev.compute_hub_capacity()
-                                hub.compute_hub_capacity()
-                                unmoved.remove(drone.id)
-                else:
-                    for link in self.network.connections:
-                        if link.destination == hub and link.origin == prev:
-                            while True:
-                                candidates = [
-                                    dr for dr in prev.current_drones
-                                    if dr.id in unmoved
-                                ]
-                                capacity = min(
-                                    link.current_capacity,
-                                    hub.current_capacity,
-                                    len(candidates)
-                                    )
-                                if capacity <= 0 or not candidates:
-                                    break
-                                drone = candidates[0]
-                                prev.current_drones.remove(drone)
-                                hub.current_drones.append(drone)
-                                drone.zone = hub
-                                link.compute_link_capacity()
-                                prev.compute_hub_capacity()
-                                hub.compute_hub_capacity()
-                                unmoved.remove(drone.id)
-
     def solver(self) -> None:
         turn: int = 0
         nb_drones: int = self.network.nb_drones
@@ -174,8 +112,8 @@ class Simulation:
             restricted: dict[str, list[Drone]] = self.restricted_drones()
             unmoved: set[int] = {dr.id for dr in self.network.drones}
             self.move_drones(unmoved)
-            if unmoved:
-                self.traffic_jam(unmoved)
+            # if unmoved:
+            #     self.traffic_jam(unmoved)
             unmoved.clear()
             self.free_drones(restricted)
 
