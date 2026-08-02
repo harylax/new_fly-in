@@ -5,7 +5,8 @@ hub while respecting hub and connection capacities, restricted zones
 and the ranked paths produced by the pathfinder.
 """
 
-from network import Network, Zone, Drone, Hub
+from utils import Zone
+from network import Network, Drone, Hub
 from pathfinder import PathFinder
 
 

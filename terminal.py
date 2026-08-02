@@ -6,9 +6,9 @@ output and optionally start the graphical animation.
 """
 
 import sys
-from utils import Ansi, MapFile
+from utils import Ansi, MapFile, Zone
 from parser import RawParser
-from model import MapModel, Zone
+from model import MapModel
 from network import Network, Hub, Connection
 from pathfinder import PathFinder
 from simulation import Simulation

@@ -6,8 +6,8 @@ used by the pathfinder and simulation.
 """
 
 from __future__ import annotations
-from model import HubData, ConnectionData, MapModel, Zone
-from utils import Color, MSGError
+from model import HubData, ConnectionData, MapModel
+from utils import Color, MSGError, Zone
 
 
 class Drone:

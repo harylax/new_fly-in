@@ -6,11 +6,12 @@ simulation history.
 """
 
 import sys
-from network import Network, Zone
+from network import Network
 from simulation import Simulation
-from utils import Img, Color, MSGError
+from utils import Img, Color, MSGError, Zone
+
 try:
-    import pygame  # type: ignore
+    import pygame
 except ImportError as err:
     MSGError.print_error(
         f"Import Error: {err}\n"

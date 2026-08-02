@@ -7,7 +7,7 @@ by the graphical view, map-file path tables and pre-loaded pygame images.
 from enum import Enum
 import sys
 try:
-    import pygame  # type: ignore
+    import pygame
 except ImportError as err:
     print(
         "\033[91m"
@@ -37,6 +37,22 @@ class MSGError:
             f"{Ansi.RESET.value}",
             file=sys.stderr
         )
+
+
+class Zone(Enum):
+    """Enumeration of possible hub zone types.
+
+    Attributes:
+        NORMAL: Standard zone (cost 1.0, 1 turn).
+        BLOCKED: Completely inaccessible zone.
+        RESTRICTED: Slow zone (cost 2.0, 2 turns via connection).
+        PRIORITY: Preferred zone (cost 0.5).
+    """
+
+    NORMAL = "normal"
+    BLOCKED = "blocked"
+    RESTRICTED = "restricted"
+    PRIORITY = "priority"
 
 
 class Ansi(Enum):

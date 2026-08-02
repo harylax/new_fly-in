@@ -6,11 +6,10 @@ constraints are validated at construction time.
 """
 
 import sys
-from utils import Color, MSGError
-from enum import Enum
+from utils import Zone, Color, MSGError
 from parser import RawParser
 try:
-    from pydantic import BaseModel, Field, ValidationError  # type: ignore
+    from pydantic import BaseModel, Field, ValidationError
 except ImportError as err:
     MSGError.print_error(
         f"Import Error: {err}\n"
@@ -20,22 +19,6 @@ except ImportError as err:
         "\npython3 -m pip install pydantic"
     )
     sys.exit(1)
-
-
-class Zone(Enum):
-    """Enumeration of possible hub zone types.
-
-    Attributes:
-        NORMAL: Standard zone (cost 1.0, 1 turn).
-        BLOCKED: Completely inaccessible zone.
-        RESTRICTED: Slow zone (cost 2.0, 2 turns via connection).
-        PRIORITY: Preferred zone (cost 0.5).
-    """
-
-    NORMAL = "normal"
-    BLOCKED = "blocked"
-    RESTRICTED = "restricted"
-    PRIORITY = "priority"
 
 
 class HubData(BaseModel):

@@ -5,9 +5,9 @@ filters out dead-ends and blocked zones,
 and ranks the remaining paths by cost.
 """
 
-from network import Network, Hub, Zone
+from network import Network, Hub
 import sys
-from utils import MSGError
+from utils import MSGError, Zone
 from collections import deque
 
 
@@ -82,7 +82,7 @@ class PathFinder:
             PathError: If the start hub itself is unreachable.
         """
         unvisited: set[Hub] = set(self.network.hubs)
-        queue: deque = deque([self.network.end_hub])
+        queue: deque[Hub] = deque([self.network.end_hub])
 
         while queue:
             current: Hub = queue.popleft()
