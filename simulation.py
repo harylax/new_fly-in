@@ -92,10 +92,10 @@ class Simulation:
     def move_drones(self) -> None:
         """Attempt to advance as many drones as possible along ranked paths.
 
-        Iterates over the cheapest paths first. For each edge of a path,
-        moves drones from the previous hub onto the next hub (or onto the
-        connecting link when the destination is restricted), respecting
-        both hub and link capacities.
+        Iterates over the ordered fifteen cheapest paths.
+        From the end of a path, moves drones from the previous hub onto
+        the next hub (or onto the connecting link when the destination is
+        restricted), respecting both hub and link capacities.
         """
         moved: set[int] = set()
         for path in self.pathfinder.paths[:15]:

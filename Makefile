@@ -15,7 +15,7 @@ debug: install
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type d -name ".myp_ycache" -exec rm -rf {} +
+	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 
 fclean: clean
 	find . -type d -name ".venv" -exec rm -rf {} +
