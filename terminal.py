@@ -131,7 +131,11 @@ class Menu:
 
                 for link in connections:
                     if zone_name == link.name:
-                        line += f"D{drone_id}-{zone_name} [CONNECTION] "
+                        line += (
+                            f"{Ansi.RED.value}"
+                            f"D{drone_id}-{zone_name} [CONNECTION] "
+                            f"{Ansi.RESET.value}"
+                            )
                 for hub in hubs:
                     if hub in [hubs[0], hubs[-1]]:
                         continue

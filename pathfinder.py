@@ -66,12 +66,12 @@ class PathFinder:
             if hub == self.network.end_hub:
                 res.append(path[:])
             else:
-                for next in hub.next_hubs:
-                    if next.name in visited:
+                for nxt in hub.next_hubs:
+                    if nxt.name in visited:
                         continue
-                    if self.is_dead_end(next):
+                    if self.is_dead_end(nxt):
                         continue
-                    dfs(next)
+                    dfs(nxt)
 
             path.pop()
             visited.remove(hub.name)

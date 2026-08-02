@@ -1,3 +1,9 @@
+"""Shared utilities, enumerations and constants for Fly-in 42.
+
+Provides colored terminal output helpers, RGB color definitions used
+by the graphical view, map-file path tables and pre-loaded pygame images.
+"""
+
 from enum import Enum
 import sys
 try:
@@ -16,8 +22,15 @@ except ImportError as err:
 
 
 class MSGError:
+    """Static helper that prints error messages to stderr in red."""
+
     @staticmethod
     def print_error(msg: str) -> None:
+        """Print an error message to stderr using ANSI red coloring.
+
+        Args:
+            msg: Error text.
+        """
         print(
             f"{Ansi.RED.value}"
             f"{msg}"
@@ -27,6 +40,8 @@ class MSGError:
 
 
 class Ansi(Enum):
+    """ANSI escape sequences for colored terminal output."""
+
     CLEAR = "\033[2J\033[H"
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -40,6 +55,12 @@ class Ansi(Enum):
 
 
 class Color(Enum):
+    """Named colors used both for map metadata and for pygame rendering.
+
+    Each member exposes an 'rgb' property that returns the corresponding
+    '(R, G, B)' tuple suitable for pygame drawing calls.
+    """
+
     GREEN = "green"
     BLUE = "blue"
     YELLOW = "yellow"
@@ -62,6 +83,11 @@ class Color(Enum):
 
     @property
     def rgb(self) -> tuple[int, int, int]:
+        """Return the RGB triple associated with this color.
+
+        Returns:
+            Tuple '(R, G, B)' with integer components in '[0, 255]'.
+        """
         color_dict: dict[
             Color, tuple[int, int, int]
             ] = {
@@ -89,7 +115,18 @@ class Color(Enum):
 
 
 class MapFile:
+    """Catalogue of pre-defined map file paths organised by difficulty.
+
+    Attributes:
+        default: Single default map.
+        easy: Easy difficulty maps.
+        medium: Medium difficulty maps.
+        hard: Hard difficulty maps.
+        challenger: Extremely difficult challenger maps.
+    """
+
     def __init__(self) -> None:
+        """Populate the path dictionaries for every difficulty level."""
         self.default: dict[int, str] = {
             1: "maps/default/01_default_map.txt"
         }
@@ -114,9 +151,7 @@ class MapFile:
 
 
 class Img(Enum):
+    """Pre-loaded pygame Surfaces used by the graphical visualiser."""
+
     BACKGROUND = pygame.image.load('night_city_skyline_3600x800.png')
     DRONE = pygame.image.load('drone-isometric-facing-right.png')
-
-
-if __name__ == "__main__":
-    print(MapFile().hard[2])

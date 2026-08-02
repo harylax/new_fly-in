@@ -21,7 +21,7 @@ fclean: clean
 	find . -type d -name ".venv" -exec rm -rf {} +
 
 lint: 
-	.venv/bin/flake8 . --exclude venv
+	.venv/bin/flake8 . --exclude .venv
 	.venv/bin/mypy . --warn-return-any \
 		--warn-unused-ignores \
 		--ignore-missing-imports \
@@ -29,5 +29,5 @@ lint:
 		--check-untyped-defs \
 
 lint-strict:
-	.venv/bin/flake8 . --exclude venv
+	.venv/bin/flake8 . --exclude .venv
 	.venv/bin/mypy . --strict

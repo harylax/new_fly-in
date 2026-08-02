@@ -1,3 +1,10 @@
+"""Validated data models for the Fly-in 42 drone simulation.
+
+Transforms the raw tuples produced by the parser module into
+strongly-typed Pydantic models. Zone types, colors and capacity
+constraints are validated at construction time.
+"""
+
 import sys
 from utils import Color, MSGError
 from enum import Enum
@@ -16,6 +23,15 @@ except ImportError as err:
 
 
 class Zone(Enum):
+    """Enumeration of possible hub zone types.
+
+    Attributes:
+        NORMAL: Standard zone (cost 1.0, 1 turn).
+        BLOCKED: Completely inaccessible zone.
+        RESTRICTED: Slow zone (cost 2.0, 2 turns via connection).
+        PRIORITY: Preferred zone (cost 0.5).
+    """
+
     NORMAL = "normal"
     BLOCKED = "blocked"
     RESTRICTED = "restricted"
@@ -23,6 +39,18 @@ class Zone(Enum):
 
 
 class HubData(BaseModel):
+    """Validated representation of a single hub.
+
+    Attributes:
+        name: Unique hub identifier.
+        x: Horizontal coordinate used for visualisation.
+        y: Vertical coordinate used for visualisation.
+        zone: Traffic zone type (default 'NORMAL').
+        color: Display color (default 'NONE').
+        max_drones: Maximum number of drones that may occupy the hub
+            simultaneously (default 1, minimum 1).
+    """
+
     name: str = Field(...)
     x: int = Field(...)
     y: int = Field(...)
@@ -32,6 +60,16 @@ class HubData(BaseModel):
 
 
 class ConnectionData(BaseModel):
+    """Validated representation of a directed connection between two hubs.
+
+    Attributes:
+        name: Full connection name of the form 'origin-destination'.
+        origin: Name of the source hub.
+        destination: Name of the target hub.
+        max_link_capacity: Maximum number of drones that may travel the
+            link at the same time (default 1, minimum 1).
+    """
+
     name: str = Field(...)
     origin: str = Field(...)
     destination: str = Field(...)
@@ -39,7 +77,25 @@ class ConnectionData(BaseModel):
 
 
 class MapModel:
+    """High-level validated map model built from the RawParser class.
+
+    Converts every raw hub and connection into the corresponding
+    Pydantic model, ensuring type safety and constraint validation.
+
+    Attributes:
+        nb_drones: Number of drones that will participate in the simulation.
+        hubs: List of intermediate 'HubData' instances.
+        start_hub: Starting hub of the network.
+        end_hub: Goal hub of the network.
+        connections: List of 'ConnectionData' instances.
+    """
+
     def __init__(self, raw: RawParser) -> None:
+        """Build the model from a fully parsed 'RawParser'.
+
+        Args:
+            raw: Parser instance that already holds the raw map data.
+        """
         try:
             if raw.nb_drones:
                 self.nb_drones = int(raw.nb_drones)
@@ -118,15 +174,3 @@ class MapModel:
                     f"Pydantic ValidationError: {error['msg']}"
                     )
                 sys.exit(1)
-
-
-if __name__ == "__main__":
-    raw = RawParser('test.txt')
-    model = MapModel(raw)
-    print(f"nb_drones: {model.nb_drones}\n")
-    print(f"start_hub: {model.start_hub}")
-    print(f"end_hub: {model.end_hub}")
-    for i, hub in enumerate(model.hubs, start=1):
-        print(f"hub {i}: {hub}")
-    for i, link in enumerate(model.connections, start=1):
-        print(f"connection {i}: {link}")

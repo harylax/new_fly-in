@@ -1,15 +1,47 @@
+"""Map file parser for the Fly-in 42 drone simulation.
+
+Reads map definition files (plain text or embedded in maps.tar.gz)
+and extracts raw hub, connection and metadata information.
+Ckeck basic syntax before handing data to the model module.
+"""
+
 from utils import MSGError
 import sys
-from typing import Any
+from typing import IO, Any
 import tarfile
 
 
 class ParsingError(Exception):
+    """Raised when a map file contains invalid syntax."""
+
     pass
 
 
 class RawParser:
+    """Parse a map definition file into structured raw data.
+
+    The parser accepts either a path relative to the embedded
+    'maps.tar.gz' archive or a regular filesystem path.
+    It extracts the number of drones, start/end hubs, intermediate
+    hubs and connections, then validates their consistency.
+
+    Attributes:
+        path: Path of the map file to parse.
+        nb_drones: Raw string value of the number of drones.
+        hubs: List of intermediate hub tuples
+            '(name, x, y, metadata_dict)'.
+        start_hub: Start hub tuple or 'None'.
+        end_hub: End hub tuple or 'None'.
+        connections: List of connection tuples
+            '(name, origin, destination, metadata_dict)'.
+    """
+
     def __init__(self, path: str) -> None:
+        """Initialize the parser and immediately parse the given map.
+
+        Args:
+            path: Path to the map definition file.
+        """
         self.path: str = path
         self.nb_drones: str | None = None
         self.hubs: list[tuple[str, str, str, dict[str, str]]] = []
@@ -29,11 +61,20 @@ class RawParser:
             sys.exit(1)
 
     def parse_to_raw_list(self) -> list[str]:
-        content: Any | None = None
+        """Read the map file content as a list of lines.
+
+        First attempts to extract the file from 'maps.tar.gz'.
+        If that fails, falls back to opening the path on the filesystem.
+
+        Returns:
+            List of non-empty lines from the map file.
+        """
+        content: list[str] = []
         try:
             with tarfile.open('maps.tar.gz') as tar:
-                f: Any = tar.extractfile(self.path)
-                content = f.read().decode().split('\n')
+                f: IO[bytes] | None = tar.extractfile(self.path)
+                if f:
+                    content.extend(f.read().decode().split('\n'))
         except (OSError, KeyError):
             pass
 
@@ -41,14 +82,26 @@ class RawParser:
             return content
 
         try:
-            with open(self.path) as f:
-                return f.read().split('\n')
+            with open(self.path) as fl:
+                return fl.read().split('\n')
         except OSError as err:
             MSGError.print_error(f"{err.__class__.__name__}: {err}")
             sys.exit(1)
 
     def parse_to_raw_dict(self) -> dict[str, Any]:
+        """Convert the raw lines into a dictionary of map components.
 
+        Parses key-value pairs ('key: value'), collecting hubs and
+        connections into dedicated lists. Comments (starts with '#')
+        and empty lines are ignored.
+
+        Returns:
+            Dictionary containing at least 'nb_drones', 'start_hub',
+            'end_hub', 'hubs' and 'connections'.
+
+        Raises:
+            ParsingError: If a required key is missing or a line is malformed.
+        """
         res: dict[str, Any] = {}
         hubs: list[str] = []
         connections: list[str] = []
@@ -109,6 +162,19 @@ class RawParser:
         return res
 
     def parse_metadata(self, s: str) -> dict[str, str]:
+        """Parse optional metadata enclosed in square brackets.
+
+        Expected format: '[key1=value1 key2=value2 ...]'.
+
+        Args:
+            s: Raw metadata string, possibly empty.
+
+        Returns:
+            Dictionary of key-value pairs extracted from the metadata.
+
+        Raises:
+            ParsingError: If the syntax is invalid.
+        """
         s = s.strip()
         if not s:
             return {}
@@ -134,10 +200,41 @@ class RawParser:
         return res
 
     def is_valid_name(self, s: str) -> bool:
+        """Check whether a hub/zone name is syntactically valid.
+
+        A valid name must not contain dashes and must not be pure whitespace.
+
+        Args:
+            s: Candidate name string.
+
+        Returns:
+            'True' if the name is valid, 'False' otherwise.
+        """
         return '-' not in s and not all(c.isspace() for c in s)
 
     def parse_hub_data(self, s: str) -> tuple[str, str, str, dict[str, str]]:
+        """Parse a single hub definition line.
+
+        Expected format: 'name x y [metadata]'.
+
+        Args:
+            s: Raw hub definition string.
+
+        Returns:
+            Tuple '(name, x, y, metadata_dict)'.
+
+        Raises:
+            ParsingError: If name, coordinates or metadata are invalid.
+        """
         def is_valid_int(s: str) -> bool:
+            """Check whether the parameter can be a valid integer.
+
+            Args:
+                s: String to be tested.
+
+            Returns:
+                'True' if the argument is convertible to int, otherwise 'False'
+            """
             try:
                 int(s)
                 return True
@@ -166,6 +263,19 @@ class RawParser:
     def parse_connection_data(self, s: str) -> tuple[
         str, str, str, dict[str, str]
     ]:
+        """Parse a single connection definition line.
+
+        Expected format: 'origin-destination [metadata]'.
+
+        Args:
+            s: Raw connection definition string.
+
+        Returns:
+            Tuple '(full_name, origin, destination, metadata_dict)'.
+
+        Raises:
+            ParsingError: If the connection syntax is invalid.
+        """
         raw: list[str] = s.split(' ', 1)
         if raw[0].count('-') > 1:
             raise ParsingError(
@@ -193,6 +303,14 @@ class RawParser:
             )
 
     def check_matching_names(self) -> None:
+        """Verify that every connection references existing hub names.
+
+        Also detects duplicate hub names.
+
+        Raises:
+            ParsingError: If a connection points to an unknown hub or if
+                duplicate hub names are found.
+        """
         hub_names: list[str] = [hub[0] for hub in self.hubs]
 
         if self.start_hub:
@@ -211,6 +329,11 @@ class RawParser:
                 raise ParsingError(f"No matching hub name for {link[2]}")
 
     def fill_attributes(self) -> None:
+        """Populate instance attributes from the parsed raw dictionary.
+
+        Converts the dictionary returned by with 'parse_to_raw_dict'
+        method into the typed attributes of the parser.
+        """
         try:
             raw: dict[str, Any] = self.parse_to_raw_dict()
         except ParsingError as err:
@@ -241,6 +364,13 @@ class RawParser:
                 sys.exit(1)
 
     def check_duplicates_connections(self) -> None:
+        """Detect duplicate or reverse-duplicate connections.
+
+        A connection 'a-b' is considered a duplicate of 'b-a'.
+
+        Raises:
+            ParsingError: If any duplicated connections detected.
+        """
         for i in range(len(self.connections)):
             _, origin1, dest1, _ = self.connections[i]
             for j in range(i + 1, len(self.connections)):
@@ -253,15 +383,3 @@ class RawParser:
                         "duplicates connections detected: "
                         f"{origin1}-{dest1} and {origin2}-{dest2}"
                         )
-
-
-if __name__ == "__main__":
-    path = "test.txt"
-    raw = RawParser(path)
-    print(f"nb_drones: {raw.nb_drones}\n")
-    print(f"start_hub: {raw.start_hub}")
-    print(f"end_hub: {raw.end_hub}")
-    for i, hub in enumerate(raw.hubs, start=1):
-        print(f"hub {i}: {hub}")
-    for i, hub in enumerate(raw.connections, start=1):
-        print(f"connection {i}: {hub}")
