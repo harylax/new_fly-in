@@ -176,13 +176,8 @@ AI assistants were used for the following tasks:
 ├── visual.py               # Pygame static map + animation
 ├── utils.py                # Shared helpers & ANSI colors
 ├── requirements.txt
-├── maps.tar.gz				# Compressed archive of maps
-├── maps/                   # Provided test maps by difficulty
-│   ├── easy/
-│   ├── medium/
-│   ├── hard/
-│   ├── challenger/
-│   └── default/
+├── maps.tar.gz				# Compressed archive of maps files
+├── default_map.txt         # Default maps for tests
 ├── drone-isometric-facing-right.png
 └── night_city_skyline_3600x800.png
 ```

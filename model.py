@@ -102,9 +102,10 @@ class MapModel:
         except ValueError as err:
             MSGError.print_error(f"ValueError: {err}")
             sys.exit(1)
-        if self.nb_drones < 0:
+        if self.nb_drones <= 0:
             MSGError.print_error(
-                "ValueError: invalid negative value for 'nb_drones'"
+                "ValueError: 'nb_drones' must be defined "
+                "as a positive integer."
                 )
             sys.exit(1)
 

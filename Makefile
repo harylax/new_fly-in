@@ -11,7 +11,7 @@ run: install
 	.venv/bin/python3 main.py
 
 debug: install
-	.venv/bin/python3 pdb main.py
+	.venv/bin/python3 -m pdb main.py
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

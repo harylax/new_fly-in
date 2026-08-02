@@ -128,7 +128,7 @@ class MapFile:
     def __init__(self) -> None:
         """Populate the path dictionaries for every difficulty level."""
         self.default: dict[int, str] = {
-            1: "maps/default/01_default_map.txt"
+            1: "default_map.txt"
         }
         self.easy: dict[int, str] = {
             1: "maps/easy/01_linear_path.txt",

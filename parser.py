@@ -105,9 +105,23 @@ class RawParser:
         res: dict[str, Any] = {}
         hubs: list[str] = []
         connections: list[str] = []
+        raw_list: list[str] = self.parse_to_raw_list()
+
+        j: int = 0
+        try:
+            while not raw_list[j] or raw_list[j].startswith('#'):
+                j += 1
+        except IndexError:
+            raise ParsingError("empty map definition file.")
+
+        if not raw_list[j].strip().startswith('nb_drones'):
+            raise ParsingError(
+                "The first line must define the number of drones "
+                "('nb_drones')"
+                )
 
         for line_num, line in enumerate(
-            self.parse_to_raw_list(),
+            raw_list,
             start=1
         ):
             if not line:

@@ -202,9 +202,9 @@ class Animation:
             else:
                 if prev_name in count_drawn:
                     y += count_drawn[prev_name]
-                    count_drawn[prev_name] -= 25
+                    count_drawn[prev_name] += 10
                 else:
-                    count_drawn[prev_name] = -25
+                    count_drawn[prev_name] = 10
             self.screen.blit(self.drone, self.drone.get_rect(center=(x, y)))
             label: Any = self.font[22].render(
                 f"D{drone_id}", True, Color.YELLOW.rgb

@@ -152,7 +152,7 @@ class Menu:
 
         Only movements that differ from the previous turn are shown.
         Restricted-zone are colored in purple,
-        their incoming connection in red and the other in blue.
+        their incoming connection in red and the other in yellow.
 
         Args:
             moves: Full history of position snapshots.
@@ -164,12 +164,15 @@ class Menu:
         """
         result: list[str] = []
         last_track: list[tuple[int, str]] = []
-        for i in range(1, len(moves[:-1])):
+        delivered: set[int] = set()
+        for i in range(1, len(moves)):
             line = ''
             last_track.clear()
             if i > 1:
                 last_track.extend(moves[i - 1])
             for drone_id, zone_name in moves[i]:
+                if drone_id in delivered:
+                    continue
                 if (drone_id, zone_name) in last_track:
                     continue
 
@@ -181,10 +184,17 @@ class Menu:
                             f"{Ansi.RESET.value}"
                             )
                 for hub in hubs:
-                    if hub in [hubs[0], hubs[-1]]:
+                    if hub is hubs[0]:
                         continue
                     if zone_name == hub.name:
-                        if hub.zone == Zone.RESTRICTED:
+                        if hub is hubs[-1]:
+                            line += (
+                                f"{Ansi.GREEN.value}"
+                                f"D{drone_id}-{zone_name} "
+                                f"{Ansi.RESET.value}"
+                            )
+                            delivered.add(drone_id)
+                        elif hub.zone == Zone.RESTRICTED:
                             line += (
                                 f"{Ansi.PURPLE.value}"
                                 f"D{drone_id}-{zone_name} "
@@ -192,12 +202,12 @@ class Menu:
                             )
                         else:
                             line += (
-                                f"{Ansi.BLUE.value}"
+                                f"{Ansi.YELLOW.value}"
                                 f"D{drone_id}-{zone_name} "
                                 f"{Ansi.RESET.value}"
                             )
             result.append(
-                f"{Ansi.GREEN.value}turn {i}: {Ansi.RESET.value}"
+                f"{Ansi.BLUE.value}turn {i}: {Ansi.RESET.value}"
                 f"{line}"
                 )
 
