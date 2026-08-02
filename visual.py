@@ -1,3 +1,10 @@
+"""Pygame-based graphical visualisation of the Fly-in 42 simulation.
+
+Draws a static map of hubs and connections over a city-skyline background,
+then animates drone movements turn by turn according to the recorded
+simulation history.
+"""
+
 import sys
 from network import Network, Zone
 from simulation import Simulation
@@ -17,7 +24,24 @@ from typing import Any
 
 
 class StaticMap:
+    """Render the static layer of the map (background, hubs, links).
+
+    Attributes:
+        network: Source network providing hub and connection data.
+        width / height: Pixel dimensions of the pygame window.
+        horizontal_scroll / vertical_scroll: Current camera offsets.
+        hub_positions: Mapping of hub name to screen coordinates.
+        background: Pre-loaded background surface.
+        screen: Main pygame display surface.
+        font: Dictionary of pygame Font objects keyed by size.
+    """
+
     def __init__(self, network: Network) -> None:
+        """Initialise pygame and compute hub screen positions.
+
+        Args:
+            network: Fully built network graph.
+        """
         pygame.init()
         self.network: Network = network
         self.width: int = 1200
@@ -39,6 +63,7 @@ class StaticMap:
         }
 
     def draw_static(self) -> None:
+        """Blit the background, draw all connections and all hubs."""
         self.screen.blit(self.background, (
             self.horizontal_scroll,
             self.vertical_scroll
@@ -77,7 +102,28 @@ class StaticMap:
 
 
 class Animation:
+    """Interpolate and draw drone sprites between consecutive turns.
+
+    Attributes:
+        static: Reference to the 'StaticMap' class used for drawing.
+        network: Convenience reference to the underlying network.
+        drone: Scaled drone sprite surface.
+        hub_positions: Shared hub coordinate mapping.
+        screen / font: Shared pygame resources.
+        drones_moves: Full simulation history of position snapshots.
+        current_turn: Index of the turn currently being displayed.
+        max_turn: Last turn index.
+        progress: Milliseconds elapsed inside the current turn.
+        turn_duration: Duration of one turn in milliseconds.
+    """
+
     def __init__(self, static: StaticMap, simulation: Simulation) -> None:
+        """Prepare the animation from a finished simulation.
+
+        Args:
+            static: Static map renderer.
+            simulation: Simulation whose 'drones_moves' will be replayed.
+        """
         self.static: StaticMap = static
         self.network: Network = static.network
         self.drone: Any = pygame.transform.smoothscale(
@@ -97,6 +143,14 @@ class Animation:
         self.turn_duration: int = 1000
 
     def get_position(self, name: str) -> tuple[float, float]:
+        """Return the screen coordinates of a hub or the midpoint of a link.
+
+        Args:
+            name: Hub name or connection name.
+
+        Returns:
+            '(x, y)' pixel coordinates.
+        """
         for link in self.network.connections:
             if link.name == name and link.origin and link.destination:
                 x1, y1 = self.hub_positions[link.origin.name]
@@ -109,7 +163,13 @@ class Animation:
         return self.hub_positions[name]
 
     def draw_drones(self) -> None:
+        """Draw every drone at its interpolated position for the current turn.
+
+        Drones stacked on the same hub are slightly offset so they remain
+        visible. Labels 'D<id>' are rendered above each sprite.
+        """
         count_drawn: dict[str, int] = {}
+        start_count: int = 0
         end_count: int = 0
 
         progress_ratio: float = min(
@@ -137,8 +197,8 @@ class Animation:
                 x += end_count * 25
                 end_count += 1
             elif prev_name == self.network.start_hub.name:
-                x -= end_count * 25
-                end_count += 1
+                x -= start_count * 25
+                start_count += 1
             else:
                 if prev_name in count_drawn:
                     y += count_drawn[prev_name]
@@ -153,7 +213,28 @@ class Animation:
 
 
 class GameMap:
+    """Top-level pygame game loop controlling camera and playback.
+
+    Handles keyboard input (arrow keys for scrolling, Space for pause,
+    R for restart, Escape to quit) and advances the animation when not
+    paused.
+
+    Attributes:
+        static: Static map renderer.
+        animation: Animation controller.
+        max_scroll: Dictionary of maximum scroll offsets.
+        running: 'True' while the window is open.
+        paused: 'True' when playback is paused.
+        clock: pygame Clock used for frame timing.
+    """
+
     def __init__(self, static: StaticMap, animation: Animation) -> None:
+        """Create the game loop controller.
+
+        Args:
+            static: Static map renderer.
+            animation: Animation controller.
+        """
         self.static: StaticMap = static
         self.animation: Animation = animation
         self.max_scroll: dict[str, int] = {
@@ -165,6 +246,7 @@ class GameMap:
         self.clock: Any = pygame.time.Clock()
 
     def display_turn_and_status(self) -> None:
+        """Draw the current turn counter and pause indicator at the top."""
         status: str = " [PAUSED]" if self.paused else ""
         text: str = (
             f"Turn {self.animation.current_turn}/"
@@ -183,6 +265,10 @@ class GameMap:
         self.static.screen.blit(label, (x, y))
 
     def run_game(self) -> None:
+        """Run main event / render loop of the graphical viewer.
+
+        Continues until the user closes the window or presses Escape.
+        """
         while self.running:
             delta_time: Any = self.clock.tick(60)
 
@@ -230,23 +316,3 @@ class GameMap:
             self.display_turn_and_status()
             pygame.display.flip()
         pygame.quit()
-
-
-if __name__ == "__main__":
-    pygame.init()
-    from parser import RawParser
-    # raw = RawParser('test.txt')
-    raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
-    from model import MapModel
-    model = MapModel(raw)
-    network = Network(model)
-    from pathfinder import PathFinder
-    pathfinder = PathFinder(network)
-    simulation = Simulation(network, pathfinder)
-    simulation.solver()
-    static = StaticMap(network)
-    animation = Animation(static, simulation)
-    game = GameMap(static, animation)
-    print(f"max turn de simulation: {len(simulation.drones_moves) - 1}")
-    print(f"max turn de visual: {animation.max_turn}")
-    # game.run_game()

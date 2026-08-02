@@ -1,3 +1,10 @@
+"""Path-finding algorithms for the Fly-in 42 drone simulation.
+
+Computes all feasible paths from the start hub to the end hub,
+filters out dead-ends and blocked zones,
+and ranks the remaining paths by cost.
+"""
+
 from network import Network, Hub, Zone
 import sys
 from utils import MSGError
@@ -5,11 +12,30 @@ from collections import deque
 
 
 class PathError(Exception):
+    """Raised when no valid path exists between start and end hubs."""
+
     pass
 
 
 class PathFinder:
+    """Discover and rank all viable paths in the network graph.
+
+    Uses a reverse BFS from the end hub to identify unreachable nodes,
+    then a DFS from the start hub to enumerate complete paths.
+    Paths are sorted by total cost (priority < normal < restricted).
+
+    Attributes:
+        network: The runtime 'Network' class to analyse.
+        unreachable: Set of hub names that cannot reach the end hub.
+        paths: List of paths sorted by ascending cost.
+    """
+
     def __init__(self, network: Network) -> None:
+        """Compute unreachable hubs and all ranked paths.
+
+        Args:
+            network: Fully built network graph.
+        """
         self.network: Network = network
         self.unreachable: set[str] = set()
 
@@ -31,6 +57,14 @@ class PathFinder:
         )
 
     def is_dead_end(self, hub: Hub) -> bool:
+        """Check whether the given hub is a dead-end or blocked.
+
+        Args:
+            hub: Hub to test.
+
+        Returns:
+            'True' if the hub is blocked or cannot reach the end hub.
+        """
         if hub == self.network.end_hub:
             return False
         if hub.zone == Zone.BLOCKED:
@@ -38,6 +72,15 @@ class PathFinder:
         return hub.name in self.unreachable
 
     def bfs_find_unreachable(self) -> None:
+        """Mark every hub that cannot reach the end hub.
+
+        Performs a reverse BFS starting from the end hub, following
+        'previous_hubs' links. Any hub left unvisited is considered
+        unreachable.
+
+        Raises:
+            PathError: If the start hub itself is unreachable.
+        """
         unvisited: set[Hub] = set(self.network.hubs)
         queue: deque = deque([self.network.end_hub])
 
@@ -55,6 +98,14 @@ class PathFinder:
             raise PathError("no path found")
 
     def dfs_path(self) -> list[list[Hub]]:
+        """Enumerate all simple paths from start to end via depth-first search.
+
+        Dead-ends and already-visited hubs are pruned. The resulting
+        paths are returned as lists of 'Hub' objects.
+
+        Returns:
+            List of complete paths (each a list of hubs).
+        """
         res: list[list[str]] = []
         path: list[str] = []
         visited: set[str] = set()
@@ -93,19 +144,12 @@ class PathFinder:
         return final
 
     def compute_path_cost(self, path: list[Hub]) -> float:
+        """Compute the total cost of a path (sum of individual hub costs).
+
+        Args:
+            path: Sequence of hubs forming a complete path.
+
+        Returns:
+            floating cost value of the path.
+        """
         return sum(hub.cost for hub in path)
-
-
-if __name__ == "__main__":
-    from parser import RawParser
-    raw = RawParser('maps/default/01_default_map.txt')
-    # raw = RawParser('maps/medium/02_circular_loop.txt')
-    # raw = RawParser('maps/challenger/01_the_impossible_dream.txt')
-    from model import MapModel
-    map_model = MapModel(raw)
-    network = Network(map_model)
-    pathfinder = PathFinder(network)
-
-    for i, path in enumerate(pathfinder.paths):
-        print(f"path {i}:")
-        print(' - '.join(hub.name for hub in path))
