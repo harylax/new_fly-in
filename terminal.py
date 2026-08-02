@@ -6,7 +6,7 @@ output and optionally start the graphical animation.
 """
 
 import sys
-from utils import Ansi, MapFile, Zone
+from utils import Ansi, MapFile, Zone, MSGError
 from parser import RawParser
 from model import MapModel
 from network import Network, Hub, Connection
@@ -138,9 +138,15 @@ class Menu:
         print(Ansi.CLEAR.value, end="")
         print(f"{self.title}")
         print(self.main_menu)
-        print("Enter your map path\n")
+        print("Enter your map.txt file path\n")
         path: str = input("Path > ")
-        self.launch(path)
+        try:
+            self.launch(path)
+        except UnicodeDecodeError as err:
+            MSGError.print_error(
+                f"Unicode Decode Error: {err}"
+            )
+            sys.exit(1)
 
     def simulation_output(
             self,
