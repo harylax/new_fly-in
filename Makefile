@@ -4,7 +4,7 @@
 	python3 -c "import sys; exit(0 if sys.version_info >= (3, 10) else 1)" || \
 		(echo "Please, install Python 3.10+ before any run."; exit 1)
 	python3 -m venv .venv
-	.venv/bin/python -m pip install -r requirements.txt
+	.venv/bin/python3 -m pip install -r requirements.txt
 	touch .venv/.installed
 
 install: .venv/.installed
