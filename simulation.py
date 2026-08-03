@@ -56,7 +56,7 @@ class Simulation:
             self.network.start_hub.compute_hub_capacity()
         self.drones_moves.append(self.snapshot())
 
-    def restricted_drones(self) -> dict[str, list[Drone]]:
+    def collect_transit_drones(self) -> dict[str, list[Drone]]:
         """Collect drones currently travelling on restricted connections.
 
         Clears the connection occupancy lists after collecting the drones
@@ -90,16 +90,19 @@ class Simulation:
                     hub.compute_hub_capacity()
                 del restricted[hub.name]
 
-    def move_drones(self) -> None:
+    def move_drones(self, paths: list[list[Hub]]) -> None:
         """Attempt to advance as many drones as possible along ranked paths.
 
-        Iterates over the ordered fifteen cheapest paths.
+        Args:
+            paths: List of the cheapest paths.
+
+        Iterates over the ordered fourteen / fifteen cheapest paths.
         From the end of a path, moves drones from the previous hub onto
         the next hub (or onto the connecting link when the destination is
         restricted), respecting both hub and link capacities.
         """
         moved: set[int] = set()
-        for path in self.pathfinder.paths[:15]:
+        for path in paths:
             if len(moved) == self.network.nb_drones:
                 break
             for i in range(len(path) - 1, 0, -1):
@@ -109,69 +112,54 @@ class Simulation:
                     continue
                 if hub == self.network.start_hub:
                     break
-                if hub.zone is Zone.RESTRICTED:
-                    for link in self.network.connections:
-                        if link.destination == hub and link.origin == prev:
-                            while True:
-                                candidates = [
-                                    dr for dr in prev.current_drones
-                                    if dr.id not in moved
+                for link in self.network.connections:
+                    if link.destination == hub and link.origin == prev:
+                        while True:
+                            candidates = [
+                                dr for dr in prev.current_drones
+                                if dr.id not in moved
                                 ]
-                                capacity = min(
-                                    link.current_capacity,
-                                    hub.current_capacity,
-                                    len(candidates)
-                                    )
-                                if capacity <= 0 or not candidates:
-                                    break
-                                drone = candidates[0]
-                                prev.current_drones.remove(drone)
+                            capacity = min(
+                                link.current_capacity,
+                                hub.current_capacity,
+                                len(candidates)
+                                )
+                            if capacity <= 0 or not candidates:
+                                break
+                            drone: Drone = candidates[0]
+                            prev.current_drones.remove(drone)
+                            if hub.zone is Zone.RESTRICTED:
                                 link.current_drones.append(drone)
                                 drone.zone = link
                                 link.compute_link_capacity()
                                 prev.compute_hub_capacity()
                                 hub.compute_hub_capacity()
-                                moved.add(drone.id)
-                else:
-                    for link in self.network.connections:
-                        if link.destination == hub and link.origin == prev:
-                            while True:
-                                candidates = [
-                                    dr for dr in prev.current_drones
-                                    if dr.id not in moved
-                                ]
-                                capacity = min(
-                                    link.current_capacity,
-                                    hub.current_capacity,
-                                    len(candidates)
-                                    )
-                                if capacity <= 0 or not candidates:
-                                    break
-                                drone = candidates[0]
-                                prev.current_drones.remove(drone)
+                            else:
                                 hub.current_drones.append(drone)
                                 drone.zone = hub
                                 link.compute_link_capacity()
                                 prev.compute_hub_capacity()
                                 hub.compute_hub_capacity()
-                                moved.add(drone.id)
+                            moved.add(drone.id)
 
     def solver(self) -> None:
         """Run the simulation until every drone reaches the end hub.
 
         Each iteration corresponds to one turn:
-        drones currently in restricted transit are first collected,
-        then free drones are moved along the ranked paths,
-        and finally the collected drones are released onto their
-        destination hub before the next turn.
+        collect drones in restricted links, then move the others
+        along the ranked paths, and finally release the collected
+        ones onto their destination hub before the next turn.
+        Best two paths are alternated for heavy network.
         A snapshot is recorded after each turn.
         """
         turn: int = 0
         nb_drones: int = self.network.nb_drones
         while len(self.network.end_hub.current_drones) != nb_drones:
-
-            restricted: dict[str, list[Drone]] = self.restricted_drones()
-            self.move_drones()
+            paths: list[list[Hub]] = self.pathfinder.paths[:15]
+            if turn % 2 and len(paths) > 5:
+                paths = paths[1:]
+            restricted: dict[str, list[Drone]] = self.collect_transit_drones()
+            self.move_drones(paths)
             self.free_drones(restricted)
 
             turn += 1
