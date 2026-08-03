@@ -96,6 +96,7 @@ class Color(Enum):
     CRIMSON = "crimson"
     VIOLET = "violet"
     RAINBOW = "rainbow"
+    GRAY = "gray"
 
     @property
     def rgb(self) -> tuple[int, int, int]:
@@ -125,7 +126,8 @@ class Color(Enum):
             Color.DARKRED: (110, 20, 20),
             Color.CRIMSON: (150, 20, 50),
             Color.RAINBOW: (180, 60, 180),
-            Color.VIOLET: (140, 60, 190)
+            Color.VIOLET: (140, 60, 190),
+            Color.GRAY: (60, 60, 60)
         }
         return color_dict[self]
 

@@ -51,11 +51,8 @@ class RawParser:
         self.fill_attributes()
         try:
             self.check_matching_names()
-        except ParsingError as err:
-            MSGError.print_error(f"Parsing Error: {err}")
-            sys.exit(1)
-        try:
             self.check_duplicates_connections()
+            self.check_overlapping_hub()
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
@@ -397,3 +394,21 @@ class RawParser:
                         "duplicates connections detected: "
                         f"{origin1}-{dest1} and {origin2}-{dest2}"
                         )
+
+    def check_overlapping_hub(self) -> None:
+        """Detect overlapping hubs.
+
+        A hub is overlapping another if they share the same positions (x, y).
+
+        Raises:
+            ParsingError: If any duplicated hub position detected.
+        """
+        for i in range(len(self.hubs)):
+            name1, x1, y1, _ = self.hubs[i]
+            for j in range(i + 1, len(self.hubs)):
+                name2, x2, y2, _ = self.hubs[j]
+                if (x1, y1) == (x2, y2):
+                    raise ParsingError(
+                        "overlapping hubs detected: "
+                        f"{name1}={(x1, y1)} and {name2}={(x2, y2)}"
+                    )

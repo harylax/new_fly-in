@@ -56,12 +56,34 @@ class StaticMap:
                 hub.y * 100 + self.height * 0.65
                 ) for hub in network.hubs
         }
-        self.background: Any = Img.BACKGROUND.value
+        self.background: Any = self.build_background()
         self.screen: Any = pygame.display.set_mode((self.width, self.height))
         self.font: dict[int, Any] = {
             22: pygame.font.SysFont("Arial", 22),
             36: pygame.font.SysFont("Arial", 36)
         }
+
+    def build_background(self) -> Any:
+        """Build a tiled background large enough to cover the whole map.
+
+        The background image is repeated as many times as needed so
+        that every hub position remains within the drawable area,
+        even for maps with erratic coordinates or a large layout.
+
+        Returns:
+            Surface object containing the composed background tiles.
+        """
+        tile: Any = Img.BACKGROUND.value
+        tile_w, tile_h = tile.get_size()
+        max_x: int = max(hub.x for hub in self.network.hubs)
+        max_y: int = max(hub.y for hub in self.network.hubs)
+        world_width: int = max(self.width, max_x * 150 + 600)
+        world_height: int = max(self.height, max_y * 100 + 600)
+        surface: Any = pygame.Surface((world_width, world_height))
+        for x in range(0, world_width, tile_w):
+            for y in range(0, world_height, tile_h):
+                surface.blit(tile, (x, y))
+        return surface
 
     def draw_static(self) -> None:
         """Blit the background, draw all connections and all hubs."""

@@ -51,7 +51,7 @@ The project is fully object-oriented, type-safe (mypy + flake8), and provides bo
 
 The solver advances turn by turn until every drone has arrived at the end hub:
 
-1. Drones currently in transit on restricted connections are collected and will be released at the beginning of the next turn (they must arrive after exactly two turns).
+1. Drones currently in transit on restricted connections are collected and will be released at the very end of the turn, after other free drones shift, to ensure they do not move twice a turn.
 2. Free drones are moved along the first fifteen ranked paths (cheapest first). For each edge of a path the engine tries to push as many eligible drones as capacity allows (both hub and link capacities are checked).
 3. Capacity is freed immediately when a drone leaves a hub, allowing other drones to enter the same hub on the same turn.
 4. A snapshot of every drone’s position is recorded after each turn for later visualization and textual output.
@@ -136,8 +136,24 @@ make fclean        # also remove the virtual environment
 
 ### Map format
 
-Maps follow the specification in the subject (see `maps/` for examples).  
 Custom maps can be placed anywhere and selected via the menu.
+Example:
+```text
+nb_drones: 5
+start_hub: hub 0 0 [color=green]
+end_hub: goal 10 10 [color=yellow]
+hub: roof1 3 4 [zone=restricted color=red]
+hub: roof2 6 2 [zone=normal color=blue]
+hub: corridorA 4 3 [zone=priority color=green max_drones=2]
+hub: tunnelB 7 4 [zone=normal color=red]
+hub: obstacleX 5 5 [zone=blocked color=gray]
+connection: hub-roof1
+connection: hub-corridorA
+connection: roof1-roof2
+connection: roof2-goal
+connection: corridorA-tunnelB [max_link_capacity=2]
+connection: tunnelB-goal
+```
 
 ## Resources
 
@@ -156,9 +172,10 @@ AI assistants were used for the following tasks:
 
 - Rapid prototyping of the interactive terminal menu layout and ASCII art
 - Drafting of docstrings following PEP 257
-- Exploration of alternative path-ranking heuristics and capacity-checking edge cases
-- Generation of additional test maps to cover dead-ends, loops and capacity bottlenecks
-- Review of error-message clarity and parser robustness
+- Exploration of alternative path-ranking algorithms
+- Debugging of edge-case of hub capacity overflowing 
+- Review of parser robustness
+- Generation of the images assets (night_city_skyline background, drone)
 
 ## Project Structure
 
@@ -166,18 +183,19 @@ AI assistants were used for the following tasks:
 .
 ├── Makefile
 ├── README.md
+├── default_map.txt         # Default maps for tests
+├── maps.tar.gz				      # Compressed archive of maps files
 ├── main.py                 # Entry point
 ├── model.py                # Pydantic models & enums
+├── mypy.ini                # Config mypy to activate pydantic plugin
 ├── network.py              # Runtime graph (Hub, Connection, Drone)
 ├── parser.py               # Map file parser
 ├── pathfinder.py           # BFS + DFS path discovery & ranking
+├── requirements.txt        # Dependencies needed
 ├── simulation.py           # Turn-based multi-drone solver
 ├── terminal.py             # Interactive menu & textual output
-├── visual.py               # Pygame static map + animation
 ├── utils.py                # Shared helpers & ANSI colors
-├── requirements.txt
-├── maps.tar.gz				# Compressed archive of maps files
-├── default_map.txt         # Default maps for tests
+├── visual.py               # Pygame static map + animation
 ├── drone-isometric-facing-right.png
 └── night_city_skyline_3600x800.png
 ```
