@@ -97,6 +97,7 @@ class Connection:
         destination: Target 'Hub' (set after graph construction).
         current_drones: Drones currently travelling on the link.
         current_capacity: Remaining free slots on the link.
+        used_this_turn: Usage of the link during a turn.
     """
 
     def __init__(self, connection: ConnectionData) -> None:
@@ -111,12 +112,15 @@ class Connection:
         self.destination: Hub | None = None
         self.current_drones: list[Drone] = []
         self.current_capacity: int = 0
+        self.used_this_turn: int = 0
         self.compute_link_capacity()
 
     def compute_link_capacity(self) -> None:
         """Recalculate the remaining free capacity of the connection."""
-        self.current_capacity = self.max_link_capacity - len(
-            self.current_drones
+        self.current_capacity = (
+            self.max_link_capacity
+            - len(self.current_drones)
+            - self.used_this_turn
             )
 
 

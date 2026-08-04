@@ -132,14 +132,13 @@ class Simulation:
                                 link.current_drones.append(drone)
                                 drone.zone = link
                                 link.compute_link_capacity()
-                                prev.compute_hub_capacity()
-                                hub.compute_hub_capacity()
                             else:
                                 hub.current_drones.append(drone)
                                 drone.zone = hub
+                                link.used_this_turn += 1
                                 link.compute_link_capacity()
-                                prev.compute_hub_capacity()
-                                hub.compute_hub_capacity()
+                            hub.compute_hub_capacity()
+                            prev.compute_hub_capacity()
                             moved.add(drone.id)
 
     def solver(self) -> None:
@@ -155,6 +154,9 @@ class Simulation:
         turn: int = 0
         nb_drones: int = self.network.nb_drones
         while len(self.network.end_hub.current_drones) != nb_drones:
+            for link in self.network.connections:
+                link.used_this_turn = 0
+                link.compute_link_capacity()
             paths: list[list[Hub]] = self.pathfinder.paths[:15]
             if turn % 2 and len(paths) > 5:
                 paths = paths[1:]
@@ -165,3 +167,18 @@ class Simulation:
             turn += 1
 
             self.drones_moves.append(self.snapshot())
+
+
+if __name__ == "__main__":
+    from parser import RawParser
+    raw = RawParser('maps/hard/03_ultimate_challenge.txt')
+    from model import MapModel
+    model = MapModel(raw)
+    graph = Network(model)
+    pathfinder = PathFinder(graph)
+    sim = Simulation(graph, pathfinder)
+    for link in graph.connections:
+        if link.name == 'conv_priority1-conv_priority2':
+            print("name:", link.name)
+            print("max_link_capacity:", link.max_link_capacity)
+    sim.solver()
