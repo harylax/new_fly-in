@@ -41,13 +41,13 @@ The project is fully object-oriented, type-safe (mypy + flake8), and provides bo
 
 ## Algorithm Choices and Implementation Strategy
 
-### Pathfinding
+### Pathfinding Algorithms
 
 1. **Reverse BFS** starting from the end hub marks every hub that cannot reach the goal. Blocked zones and dead-ends are eliminated early.
 2. **DFS** from the start hub enumerates all simple (cycle-free) paths, pruning any branch that leads to a previously marked unreachable or blocked hub.
 3. Paths are sorted by ascending total cost. The cost of a path is the sum of the individual hub costs (`priority` = 0.5, `normal` = 1, `restricted` = 2). This ordering prefers short, high-priority routes.
 
-### Simulation Engine
+### Simulation Engine Strategy
 
 The solver advances turn by turn until every drone has arrived at the end hub:
 
@@ -80,7 +80,18 @@ The strategy deliberately limits the number of considered paths (`paths[:15]`) t
   - Escape — quit
 - Live turn counter and pause indicator
 
-The graphical viewer greatly improves understanding of congestion points, capacity bottlenecks and the overall routing strategy.
+### User Experience
+
+- Static hubs are drawn at their map coordinates with their names, labels and color to distinguish start, normal, restricted, blocked and priority zones.
+- Connections are drawn between hubs, making all possible drone routes immediately visible.
+- A panoramic background can be scrolled using keyboards arrows key, allowing comfortable visualization of maps larger than the window.
+- Drones move smoothly along connections, making each simulation turn easy to follow.
+- Drones occupying the same hub are rendered with a small positional offset so that every drone remains visible during congestion.
+- The current simulation turn is permanently displayed, allowing users to monitor the progression of the solver.
+- The interface displays whether the animation is currently paused or running, providing immediate visual feedback.
+- The animation can be paused and resume with **Space** key, enabling detailed inspection of drone movements.
+- Pressing **R** restarts the animation from the beginning without rerunning the simulation, making it easy to replay and analyze the routing strategy.
+- The graphical viewer greatly improves understanding of congestion points, capacity bottlenecks, restricted-zone delays, and the overall routing strategy.
 
 ## Instructions
 
