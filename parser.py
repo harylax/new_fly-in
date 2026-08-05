@@ -53,6 +53,7 @@ class RawParser:
             self.check_matching_names()
             self.check_duplicates_connections()
             self.check_overlapping_hub()
+            self.check_invalid_metadata()
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
@@ -82,7 +83,9 @@ class RawParser:
             with open(self.path) as fl:
                 return fl.read().split('\n')
         except OSError as err:
-            MSGError.print_error(f"{err.__class__.__name__}: {err}")
+            MSGError.print_error(
+                f"{err.__class__.__name__} for {self.path}: {err}"
+                )
             sys.exit(1)
 
     def parse_to_raw_dict(self) -> dict[str, Any]:
@@ -117,6 +120,7 @@ class RawParser:
                 "('nb_drones')"
                 )
 
+        seen: set[str] = set()
         for line_num, line in enumerate(
             raw_list,
             start=1
@@ -148,7 +152,10 @@ class RawParser:
 
             else:
                 try:
+                    if key in seen:
+                        raise ParsingError(f"got a duplicate '{key}'")
                     res[key] = value
+                    seen.add(key)
                 except KeyError as err:
                     MSGError.print_error(
                         f"Parsing Error: line n{line_num}, {err}"
@@ -191,22 +198,34 @@ class RawParser:
             return {}
         if not s.startswith('[') or not s.endswith(']'):
             raise ParsingError(
-                "metadata syntax should be in the format [key=value]"
+                "metadata syntax should be in the format [key=value], "
+                f"got: {s}"
                 )
         s = s.strip('[]')
         raw: list[str] = s.split()
 
         res: dict[str, str] = {}
 
+        seen: set[str] = set()
         for element in raw:
             key, _, value = element.partition('=')
             key = key.strip()
             value = value.strip()
             if not key or not value:
                 raise ParsingError(
-                    "metadata syntax should be in the format [key=value]"
+                    "metadata syntax should be in the format [key=value], "
+                    f"got: {s}, error '{key}={value}'"
                     )
+            if key not in ['zone', 'color', 'max_drones', 'max_link_capacity']:
+                raise ParsingError(
+                    f"got invalid metadata: {key}"
+                )
+            if key in seen:
+                raise ParsingError(
+                    f"got multiple {key}={value}"
+                )
             res[key] = value
+            seen.add(key)
 
         return res
 
@@ -258,7 +277,10 @@ class RawParser:
             or not is_valid_int(raw[1])
             or not is_valid_int(raw[2])
         ):
-            raise ParsingError("missing/error in hub data <name> <x> <y>")
+            raise ParsingError(
+                f"missing/error in hub data <name={raw[0]}> "
+                f"<x={raw[1]}> <y={raw[2]}>"
+                )
         metadata: str = ''
         try:
             metadata += raw[3]
@@ -299,7 +321,8 @@ class RawParser:
             or not self.is_valid_name(hub[1])
         ):
             raise ParsingError(
-                "missing/error in connection data <name1>-<name2>"
+                "missing/error in connection data <name1>-<name2>, "
+                f"got '{raw[0]}'"
                 )
         metadata: str = ''
         try:
@@ -403,12 +426,55 @@ class RawParser:
         Raises:
             ParsingError: If any duplicated hub position detected.
         """
-        for i in range(len(self.hubs)):
-            name1, x1, y1, _ = self.hubs[i]
-            for j in range(i + 1, len(self.hubs)):
-                name2, x2, y2, _ = self.hubs[j]
+        hubs: list[tuple[str, str, str]] = [
+            (hub[0], hub[1], hub[2]) for hub in self.hubs
+        ]
+        if self.start_hub and self.end_hub:
+            hubs.insert(0, (
+                self.start_hub[0],
+                self.start_hub[1],
+                self.start_hub[2]
+                ))
+            hubs.append((
+                self.end_hub[0],
+                self.end_hub[1],
+                self.end_hub[2]
+                ))
+        for i in range(len(hubs)):
+            name1, x1, y1 = hubs[i]
+            for j in range(i + 1, len(hubs)):
+                name2, x2, y2 = hubs[j]
                 if (x1, y1) == (x2, y2):
                     raise ParsingError(
                         "overlapping hubs detected: "
                         f"{name1}={(x1, y1)} and {name2}={(x2, y2)}"
                     )
+
+    def check_invalid_metadata(self) -> None:
+        """Detect metadata used at wrong place.
+
+        Ensures that hubs do not define the 'max_link_capacity metadata,
+        and connections do not define the 'zone', 'color', or
+        'max_drones' metadata.
+
+        Raises:
+            ParsingError: If an invalid metadata field is fond
+                on a hub or a connection.
+        """
+        hubs_meta: list[tuple[str, dict[str, str]]] = [
+            (hub[0], hub[3]) for hub in self.hubs
+        ]
+        if self.start_hub and self.end_hub:
+            hubs_meta.insert(0, (self.start_hub[0], self.start_hub[3]))
+            hubs_meta.append((self.end_hub[0], self.end_hub[3]))
+        for hub_meta in hubs_meta:
+            if 'max_link_capacity' in hub_meta[1]:
+                raise ParsingError(
+                    f"invalid 'max_link_capacity' metadata for {hub_meta[0]}"
+                    )
+        for connection in self.connections:
+            for key in ['zone', 'color', 'max_drones']:
+                if key in connection[3]:
+                    raise ParsingError(
+                        f"invalid '{key}' metadata for {connection[0]}"
+                        )

@@ -1,7 +1,6 @@
 nb_drones: 8
 
 start_hub: start 0 0 [color=green max_drones=8]
-
 hub: trap1 1 1 [color=red]
 hub: trap2 2 2 [color=red]
 hub: trap3 3 2 [color=red]
@@ -11,12 +10,12 @@ hub: converge_priority 2 1 [zone=priority color=cyan max_drones=2]
 hub: long_priority1 1 -1 [zone=priority color=cyan max_drones=2]
 hub: long_priority2 2 -1 [zone=priority color=cyan max_drones=2]
 hub: long_priority3 3 -1 [zone=priority color=cyan max_drones=2]
-hub: blocked 4 1 [color=gray zone=blocked]
+hub: blocked 4 1 [color=black zone=blocked]
 hub: wide_area 4 0 [color=magenta max_drones=8]
-hub: loop_a 5 -1 [color=yellow]
-hub: loop_b 4 -1 [color=yellow]
+hub: loop_a 5 -1
+hub: loop_b 4 -1
 
-end_hub: goal 5 0 [color=gold max_drones=8]
+end_hub: goal 6 0 [color=gold max_drones=8]
 
 connection: start-trap1
 connection: trap1-trap2

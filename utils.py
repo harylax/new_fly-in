@@ -1,24 +1,11 @@
 """Shared utilities, enumerations and constants for Fly-in 42.
 
 Provides colored terminal output helpers, RGB color definitions used
-by the graphical view, map-file path tables and pre-loaded pygame images.
+by the graphical view, map-file path tables and zone type definitions.
 """
 
 from enum import Enum
 import sys
-try:
-    import pygame
-except ImportError as err:
-    print(
-        "\033[91m"
-        f"Import Error: {err}\n"
-        "Please, install pygame before any run.\n"
-        "Usage:\npython3 -m venv .venv"
-        "\nsource venv/bin/activate"
-        "\npython3 -m pip install pygame"
-        "\033[0m"
-    )
-    sys.exit(1)
 
 
 class MSGError:
@@ -166,10 +153,3 @@ class MapFile:
         self.challenger: dict[int, str] = {
             1: "maps/challenger/01_the_impossible_dream.txt"
         }
-
-
-class Img(Enum):
-    """Pre-loaded pygame Surfaces used by the graphical visualiser."""
-
-    BACKGROUND = pygame.image.load('night_city_skyline_3600x800.png')
-    DRONE = pygame.image.load('drone-isometric-facing-right.png')

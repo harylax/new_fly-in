@@ -197,7 +197,7 @@ AI assistants were used for the following tasks:
 ├── default_map.txt         # Default maps for tests
 ├── maps.tar.gz				      # Compressed archive of maps files
 ├── main.py                 # Entry point
-├── model.py                # Pydantic models & enums
+├── model.py                # Pydantic models
 ├── mypy.ini                # Config mypy to activate pydantic plugin
 ├── network.py              # Runtime graph (Hub, Connection, Drone)
 ├── parser.py               # Map file parser

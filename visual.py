@@ -8,7 +8,8 @@ simulation history.
 import sys
 from network import Network
 from simulation import Simulation
-from utils import Img, Color, MSGError, Zone
+from utils import Color, MSGError, Zone
+from enum import Enum
 
 try:
     import pygame
@@ -22,6 +23,13 @@ except ImportError as err:
     )
     sys.exit(1)
 from typing import Any
+
+
+class Img(Enum):
+    """Pre-loaded pygame Surfaces used by the graphical visualiser."""
+
+    BACKGROUND = pygame.image.load('night_city_skyline_3600x800.png')
+    DRONE = pygame.image.load('drone-isometric-facing-right.png')
 
 
 class StaticMap:

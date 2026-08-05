@@ -167,18 +167,3 @@ class Simulation:
             turn += 1
 
             self.drones_moves.append(self.snapshot())
-
-
-if __name__ == "__main__":
-    from parser import RawParser
-    raw = RawParser('maps/hard/03_ultimate_challenge.txt')
-    from model import MapModel
-    model = MapModel(raw)
-    graph = Network(model)
-    pathfinder = PathFinder(graph)
-    sim = Simulation(graph, pathfinder)
-    for link in graph.connections:
-        if link.name == 'conv_priority1-conv_priority2':
-            print("name:", link.name)
-            print("max_link_capacity:", link.max_link_capacity)
-    sim.solver()
