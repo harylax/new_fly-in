@@ -152,18 +152,29 @@ Example:
 ```text
 nb_drones: 5
 start_hub: hub 0 0 [color=green]
-end_hub: goal 10 10 [color=yellow]
-hub: roof1 3 4 [zone=restricted color=red]
-hub: roof2 6 2 [zone=normal color=blue]
-hub: corridorA 4 3 [zone=priority color=green max_drones=2]
-hub: tunnelB 7 4 [zone=normal color=red]
-hub: obstacleX 5 5 [zone=blocked color=gray]
+end_hub: goal 3 0 [color=yellow]
+hub: roof1 1 0 [zone=restricted color=red]
+hub: roof2 2 0 [zone=normal color=blue]
+hub: corridorA 1 -1 [zone=priority color=green max_drones=2]
+hub: tunnelB 2 -1 [zone=normal color=red]
+hub: obstacleX 1 1 [zone=blocked color=gray]
 connection: hub-roof1
 connection: hub-corridorA
 connection: roof1-roof2
 connection: roof2-goal
 connection: corridorA-tunnelB [max_link_capacity=2]
 connection: tunnelB-goal
+```
+
+### Output format
+
+```bash
+turn 1: D1-corridorA D2-hub-roof1
+turn 2: D1-tunnelB D2-roof1 D3-corridorA
+turn 3: D1-goal D2-roof2 D3-tunnelB D4-corridorA D5-hub-roof1
+turn 4: D2-goal D3-goal D4-tunnelB D5-roof1
+turn 5: D4-goal D5-roof2
+turn 6: D5-goal
 ```
 
 ## Resources

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Entry point of the Fly-in 42 drone simulation application.
 
 This module launches the interactive terminal menu that allows the user
