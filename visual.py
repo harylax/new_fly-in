@@ -55,13 +55,17 @@ class StaticMap:
         self.network: Network = network
         self.width: int = 1200
         self.height: int = 600
+        self.min_x: int = min(hub.x for hub in network.hubs)
+        self.min_y: int = min(hub.y for hub in network.hubs)
+        self.max_x: int = max(hub.x for hub in network.hubs)
+        self.max_y: int = max(hub.y for hub in network.hubs)
         self.horizontal_scroll: int = 0
         self.vertical_scroll: int = 0
 
         self.hub_positions: dict[str, tuple[float, float]] = {
             hub.name: (
-                hub.x * 150 + 150,
-                hub.y * 100 + self.height * 0.65
+                (hub.x - self.min_x) * 150 + 150,
+                (hub.y - self.min_y) * 100 + self.height * 0.5
                 ) for hub in network.hubs
         }
         self.background: Any = self.build_background()
@@ -83,10 +87,10 @@ class StaticMap:
         """
         tile: Any = Img.BACKGROUND.value
         tile_w, tile_h = tile.get_size()
-        max_x: int = max(hub.x for hub in self.network.hubs)
-        max_y: int = max(hub.y for hub in self.network.hubs)
-        world_width: int = max(self.width, max_x * 150 + 600)
-        world_height: int = max(self.height, max_y * 100 + 600)
+        range_x: int = self.max_x - self.min_x
+        range_y: int = self.max_y - self.min_y
+        world_width: int = max(self.width, range_x * 150 + 600)
+        world_height: int = max(self.height, range_y * 100 + 500)
         surface: Any = pygame.Surface((world_width, world_height))
         for x in range(0, world_width, tile_w):
             for y in range(0, world_height, tile_h):
