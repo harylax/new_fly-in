@@ -6,15 +6,14 @@ output and optionally start the graphical animation.
 """
 
 import sys
-from utils import Ansi, MapFile, Zone, MSGError
+from utils import Ansi, MapFile, MSGError
 from parser import RawParser
 from model import MapModel
-from network import Network, Hub, Connection
+from network import Network
 from pathfinder import PathFinder
+from output import Output
 from simulation import Simulation
-from visual import StaticMap
-from visual import Animation
-from visual import GameMap
+from visual import StaticMap, Animation, GameMap
 
 
 class Menu:
@@ -34,7 +33,7 @@ class Menu:
 
     def __init__(self) -> None:
         """Initialize all menu text strings and ASCII art."""
-        self.title: str = (
+        self._title: str = (
             "╔════════════════════════════════════════════════════╗\n"
             "║                                                    ║\n"
             "║    ███████╗██╗     ██╗   ██╗      ██╗███╗   ██╗    ║\n"
@@ -47,14 +46,14 @@ class Menu:
             "║         42 Drone Simulation - by haryandr          ║\n"
             "╚════════════════════════════════════════════════════╝"
         )
-        self.main_menu: str = (
+        self._main_menu: str = (
             "[1] 🚀 Run default map\n\n"
             "[2] 🗺️ Choose map\n\n"
             "[3] 📂 Enter your existing map path\n\n"
             "[4] ❌ Quit\n\n"
             "──────────────────────────────────────────────────────\n"
         )
-        self.difficulty: str = (
+        self._difficulty: str = (
             "Choose difficulty\n\n"
             "\t[1] 🟢 Easy\n"
             "\t[2] 🟡 Medium\n"
@@ -63,14 +62,14 @@ class Menu:
             "\n\t[0] ← Back\n\n"
             "──────────────────────────────────────────────────────\n"
         )
-        self.exit_message: str = (
+        self._exit_message: str = (
             "══════════════════════════════════════════════════════\n\n"
             "\t   Thank you for using Fly-in 42\n\n"
             "\t\tHave a nice flight ✈\n\n"
             "\t\t      Bye bye!\n\n"
             "══════════════════════════════════════════════════════"
         )
-        self.easy: str = (
+        self._easy: str = (
             f"{Ansi.GREEN.value}"
             "Easy maps\n\n"
             "\t[1] Linear path\n"
@@ -80,7 +79,7 @@ class Menu:
             "\n\t[0] ← Back\n"
             "──────────────────────────────────────────────────────\n"
         )
-        self.medium: str = (
+        self._medium: str = (
             f"{Ansi.BLUE.value}"
             "Medium maps\n\n"
             "\t[1] Dead end trap\n"
@@ -90,7 +89,7 @@ class Menu:
             "\n\t[0] ← Back\n"
             "──────────────────────────────────────────────────────\n"
         )
-        self.hard: str = (
+        self._hard: str = (
             f"{Ansi.YELLOW.value}"
             "Hard maps\n\n"
             "\t[1] Maze nightmare\n"
@@ -100,7 +99,7 @@ class Menu:
             "\n\t[0] ← Back\n"
             "──────────────────────────────────────────────────────\n"
         )
-        self.challenger: str = (
+        self._challenger: str = (
             f"{Ansi.RED.value}"
             "Challenger\n\n"
             "\t[1] The impossible dream\n"
@@ -109,15 +108,15 @@ class Menu:
             "──────────────────────────────────────────────────────\n"
         )
 
-    def home(self) -> int:
+    def _home(self) -> int:
         """Display the main menu and return the user's numeric choice.
 
         Returns:
             Integer option (1-4) or '-1' on invalid input.
         """
         print(Ansi.CLEAR.value, end="")
-        print(f"{self.title}")
-        print(self.main_menu)
+        print(f"{self._title}")
+        print(self._main_menu)
         print("Choose an option [1-4] > ", end="")
         try:
             return int(input())
@@ -126,18 +125,18 @@ class Menu:
 
     def quit(self) -> None:
         """Print the farewell message and terminate the process."""
-        print(self.exit_message)
+        print(self._exit_message)
         sys.exit(0)
 
-    def default_map(self) -> None:
+    def _default_map(self) -> None:
         """Launch the simulation with a pre-built default map."""
         self.launch(MapFile().default[1])
 
-    def custom_map(self) -> None:
+    def _custom_map(self) -> None:
         """Prompt the user for a custom map path and launch it."""
         print(Ansi.CLEAR.value, end="")
-        print(f"{self.title}")
-        print(self.main_menu)
+        print(f"{self._title}")
+        print(self._main_menu)
         print("Enter your map.txt file path\n")
         path: str = input("Path > ")
         try:
@@ -147,85 +146,6 @@ class Menu:
                 f"Unicode Decode Error: {err}"
             )
             sys.exit(1)
-
-    def simulation_output(
-            self,
-            moves: list[list[tuple[int, str]]],
-            hubs: list[Hub],
-            connections: list[Connection]
-            ) -> list[str]:
-        """Format the simulation history into colored terminal lines.
-
-        Only movements that differ from the previous turn are shown.
-        Restricted-zone are colored in purple,
-        their incoming connection in red and the other in yellow.
-
-        Args:
-            moves: Full history of position snapshots.
-            hubs: List of hubs used for zone lookup.
-            connections: List of connections used for coloring.
-
-        Returns:
-            List of ready-to-print strings of the simulation.
-        """
-        result: list[str] = []
-        last_track: list[tuple[int, str]] = []
-        delivered: set[int] = set()
-        for i in range(1, len(moves)):
-            line = ''
-            last_track.clear()
-            if i > 1:
-                last_track.extend(moves[i - 1])
-            for drone_id, zone_name in moves[i]:
-                if drone_id in delivered:
-                    continue
-                if (drone_id, zone_name) in last_track:
-                    continue
-
-                for link in connections:
-                    if zone_name == link.name:
-                        line += (
-                            f"{Ansi.RED.value}"
-                            f"D{drone_id}-{zone_name} "
-                            f"{Ansi.RESET.value}"
-                            )
-                for hub in hubs:
-                    if hub is hubs[0]:
-                        continue
-                    if zone_name == hub.name:
-                        if hub is hubs[-1]:
-                            line += (
-                                f"{Ansi.GREEN.value}"
-                                f"D{drone_id}-{zone_name} "
-                                f"{Ansi.RESET.value}"
-                            )
-                            delivered.add(drone_id)
-                        elif hub.zone == Zone.RESTRICTED:
-                            line += (
-                                f"{Ansi.PURPLE.value}"
-                                f"D{drone_id}-{zone_name} "
-                                f"{Ansi.RESET.value}"
-                            )
-                        else:
-                            line += (
-                                f"{Ansi.YELLOW.value}"
-                                f"D{drone_id}-{zone_name} "
-                                f"{Ansi.RESET.value}"
-                            )
-            result.append(
-                f"{Ansi.BLUE.value}turn {i}: {Ansi.RESET.value}"
-                f"{line}"
-                )
-
-        title: str = (
-            f"{Ansi.CYAN.value}{Ansi.BOLD.value}"
-            "──────────────────────────────────────────────────────\n"
-            "\t\t>>>Simulation Output<<<\n"
-            "──────────────────────────────────────────────────────\n"
-            f"{Ansi.RESET.value}"
-        )
-        result.insert(0, title)
-        return result
 
     def launch(self, path: str) -> None:
         """Parse, solve and display a map.
@@ -241,12 +161,10 @@ class Menu:
         pathfinder: PathFinder = PathFinder(network)
         simulation: Simulation = Simulation(network, pathfinder)
         simulation.solver()
-        output: list[str] = self.simulation_output(
-            simulation.drones_moves, network.hubs, network.connections
-            )
+        output: list[str] = Output(network, simulation).simulation_output()
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
+            print(f"{self._title}")
             print(
                 "──────────────────────────────────────────────────────\n"
                 "Do you want to enable graphical animation?"
@@ -267,35 +185,35 @@ class Menu:
             game.run_game()
         self.quit()
 
-    def choose_difficulty(self) -> None:
+    def _choose_difficulty(self) -> None:
         """Display the difficulty selector, dispatch to the matching menu."""
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
-            print(self.difficulty)
+            print(f"{self._title}")
+            print(self._difficulty)
             print("Choose [1-4][0] > ", end="")
             try:
                 x = int(input())
             except ValueError:
                 continue
             if x == 1:
-                self.easy_menu()
+                self._easy_menu()
             elif x == 2:
-                self.medium_menu()
+                self._medium_menu()
             elif x == 3:
-                self.hard_menu()
+                self._hard_menu()
             elif x == 4:
-                self.challenger_menu()
+                self._challenger_menu()
             elif x == 0:
                 return
 
-    def easy_menu(self) -> None:
+    def _easy_menu(self) -> None:
         """Display the easy-map picker and launch the chosen map."""
         map: dict[int, str] = MapFile().easy
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
-            print(self.easy)
+            print(f"{self._title}")
+            print(self._easy)
             print("Choose [1-3][0] > ", end="")
             try:
                 x = int(input())
@@ -310,13 +228,13 @@ class Menu:
             elif x == 0:
                 return
 
-    def medium_menu(self) -> None:
+    def _medium_menu(self) -> None:
         """Display the medium-map picker and launch the chosen map."""
         map: dict[int, str] = MapFile().medium
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
-            print(self.medium)
+            print(f"{self._title}")
+            print(self._medium)
             print("Choose [1-3][0] > ", end="")
             try:
                 x = int(input())
@@ -331,13 +249,13 @@ class Menu:
             elif x == 0:
                 return
 
-    def hard_menu(self) -> None:
+    def _hard_menu(self) -> None:
         """Display the hard-map picker and launch the chosen map."""
         map: dict[int, str] = MapFile().hard
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
-            print(self.hard)
+            print(f"{self._title}")
+            print(self._hard)
             print("Choose [1-3][0] > ", end="")
             try:
                 x = int(input())
@@ -352,13 +270,13 @@ class Menu:
             elif x == 0:
                 return
 
-    def challenger_menu(self) -> None:
+    def _challenger_menu(self) -> None:
         """Display the challenger-map picker and launch the chosen map."""
         map: dict[int, str] = MapFile().challenger
         while True:
             print(Ansi.CLEAR.value, end="")
-            print(f"{self.title}")
-            print(self.challenger)
+            print(f"{self._title}")
+            print(self._challenger)
             print("Choose [1][0] > ", end="")
             try:
                 x = int(input())
@@ -372,13 +290,13 @@ class Menu:
     def run_terminal(self) -> None:
         """Run main interactive loop of the terminal interface."""
         while True:
-            x: int = self.home()
+            x: int = self._home()
             if x == 1:
-                self.default_map()
+                self._default_map()
             elif x == 2:
-                self.choose_difficulty()
+                self._choose_difficulty()
             elif x == 3:
-                self.custom_map()
+                self._custom_map()
             elif x == 4:
                 print(Ansi.CLEAR.value, end="")
                 self.quit()

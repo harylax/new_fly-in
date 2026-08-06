@@ -42,23 +42,23 @@ class RawParser:
         Args:
             path: Path to the map definition file.
         """
-        self.path: str = path
+        self._path: str = path
         self.nb_drones: str | None = None
         self.hubs: list[tuple[str, str, str, dict[str, str]]] = []
         self.start_hub: tuple[str, str, str, dict[str, str]] | None = None
         self.end_hub: tuple[str, str, str, dict[str, str]] | None = None
         self.connections: list[tuple[str, str, str, dict[str, str]]] = []
-        self.fill_attributes()
+        self._fill_attributes()
         try:
-            self.check_matching_names()
-            self.check_duplicates_connections()
-            self.check_overlapping_hub()
-            self.check_invalid_metadata()
+            self._check_matching_names()
+            self._check_duplicates_connections()
+            self._check_overlapping_hub()
+            self._check_invalid_metadata()
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
 
-    def parse_to_raw_list(self) -> list[str]:
+    def _parse_to_raw_list(self) -> list[str]:
         """Read the map file content as a list of lines.
 
         First attempts to extract the file from 'maps.tar.gz'.
@@ -70,25 +70,25 @@ class RawParser:
         content: list[str] = []
         try:
             with tarfile.open('maps.tar.gz') as tar:
-                f: IO[bytes] | None = tar.extractfile(self.path)
+                f: IO[bytes] | None = tar.extractfile(self._path)
                 if f:
                     content.extend(f.read().decode().split('\n'))
-        except (OSError, KeyError):
+        except (OSError, KeyError, AttributeError, TypeError):
             pass
 
         if content:
             return content
 
         try:
-            with open(self.path) as fl:
+            with open(self._path) as fl:
                 return fl.read().split('\n')
         except OSError as err:
             MSGError.print_error(
-                f"{err.__class__.__name__} for {self.path}: {err}"
+                f"{err.__class__.__name__} for {self._path}: {err}"
                 )
             sys.exit(1)
 
-    def parse_to_raw_dict(self) -> dict[str, Any]:
+    def _parse_to_raw_dict(self) -> dict[str, Any]:
         """Convert the raw lines into a dictionary of map components.
 
         Parses key-value pairs ('key: value'), collecting hubs and
@@ -105,7 +105,7 @@ class RawParser:
         res: dict[str, Any] = {}
         hubs: list[str] = []
         connections: list[str] = []
-        raw_list: list[str] = self.parse_to_raw_list()
+        raw_list: list[str] = self._parse_to_raw_list()
 
         j: int = 0
         try:
@@ -179,7 +179,7 @@ class RawParser:
 
         return res
 
-    def parse_metadata(self, s: str) -> dict[str, str]:
+    def _parse_metadata(self, s: str) -> dict[str, str]:
         """Parse optional metadata enclosed in square brackets.
 
         Expected format: '[key1=value1 key2=value2 ...]'.
@@ -229,7 +229,7 @@ class RawParser:
 
         return res
 
-    def is_valid_name(self, s: str) -> bool:
+    def _is_valid_name(self, s: str) -> bool:
         """Check whether a hub/zone name is syntactically valid.
 
         A valid name must not contain dashes and must not be pure whitespace.
@@ -242,7 +242,7 @@ class RawParser:
         """
         return '-' not in s and not all(c.isspace() for c in s)
 
-    def parse_hub_data(self, s: str) -> tuple[str, str, str, dict[str, str]]:
+    def _parse_hub_data(self, s: str) -> tuple[str, str, str, dict[str, str]]:
         """Parse a single hub definition line.
 
         Expected format: 'name x y [metadata]'.
@@ -273,7 +273,7 @@ class RawParser:
 
         raw: list[str] = s.split(' ', 3)
         if (
-            not self.is_valid_name(raw[0])
+            not self._is_valid_name(raw[0])
             or not is_valid_int(raw[1])
             or not is_valid_int(raw[2])
         ):
@@ -290,10 +290,10 @@ class RawParser:
             raw[0].strip(),
             raw[1].strip(),
             raw[2].strip(),
-            self.parse_metadata(metadata)
+            self._parse_metadata(metadata)
             )
 
-    def parse_connection_data(self, s: str) -> tuple[
+    def _parse_connection_data(self, s: str) -> tuple[
         str, str, str, dict[str, str]
     ]:
         """Parse a single connection definition line.
@@ -317,8 +317,8 @@ class RawParser:
         hub: list[str] = raw[0].split('-', 1)
         if (
             not raw[0] or not raw[0].count('-')
-            or not self.is_valid_name(hub[0])
-            or not self.is_valid_name(hub[1])
+            or not self._is_valid_name(hub[0])
+            or not self._is_valid_name(hub[1])
         ):
             raise ParsingError(
                 "missing/error in connection data <name1>-<name2>, "
@@ -333,10 +333,10 @@ class RawParser:
             raw[0].strip(),
             hub[0].strip(),
             hub[1].strip(),
-            self.parse_metadata(metadata)
+            self._parse_metadata(metadata)
             )
 
-    def check_matching_names(self) -> None:
+    def _check_matching_names(self) -> None:
         """Verify that every connection references existing hub names.
 
         Also detects duplicate hub names.
@@ -362,14 +362,14 @@ class RawParser:
             if link[2] not in hub_names:
                 raise ParsingError(f"No matching hub name for {link[2]}")
 
-    def fill_attributes(self) -> None:
+    def _fill_attributes(self) -> None:
         """Populate instance attributes from the parsed raw dictionary.
 
         Converts the dictionary returned by with 'parse_to_raw_dict'
         method into the typed attributes of the parser.
         """
         try:
-            raw: dict[str, Any] = self.parse_to_raw_dict()
+            raw: dict[str, Any] = self._parse_to_raw_dict()
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
@@ -379,25 +379,27 @@ class RawParser:
             MSGError.print_error("Parsing Error: missing nb_drones value")
             sys.exit(1)
         try:
-            self.start_hub = self.parse_hub_data(raw['start_hub'])
-            self.end_hub = self.parse_hub_data(raw['end_hub'])
+            self.start_hub = self._parse_hub_data(raw['start_hub'])
+            self.end_hub = self._parse_hub_data(raw['end_hub'])
         except ParsingError as err:
             MSGError.print_error(f"Parsing Error: {err}")
             sys.exit(1)
         for hub in raw['hubs']:
             try:
-                self.hubs.append(self.parse_hub_data(hub))
+                self.hubs.append(self._parse_hub_data(hub))
             except ParsingError as err:
                 MSGError.print_error(f"Parsing Error: {err}")
                 sys.exit(1)
         for connection in raw['connections']:
             try:
-                self.connections.append(self.parse_connection_data(connection))
+                self.connections.append(
+                    self._parse_connection_data(connection)
+                    )
             except ParsingError as err:
                 MSGError.print_error(f"Parsing Error: {err}")
                 sys.exit(1)
 
-    def check_duplicates_connections(self) -> None:
+    def _check_duplicates_connections(self) -> None:
         """Detect duplicate or reverse-duplicate connections.
 
         A connection 'a-b' is considered a duplicate of 'b-a'.
@@ -418,7 +420,7 @@ class RawParser:
                         f"{origin1}-{dest1} and {origin2}-{dest2}"
                         )
 
-    def check_overlapping_hub(self) -> None:
+    def _check_overlapping_hub(self) -> None:
         """Detect overlapping hubs.
 
         A hub is overlapping another if they share the same positions (x, y).
@@ -450,7 +452,7 @@ class RawParser:
                         f"{name1}={(x1, y1)} and {name2}={(x2, y2)}"
                     )
 
-    def check_invalid_metadata(self) -> None:
+    def _check_invalid_metadata(self) -> None:
         """Detect metadata used at wrong place.
 
         Ensures that hubs do not define the 'max_link_capacity metadata,

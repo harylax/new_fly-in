@@ -55,27 +55,27 @@ class StaticMap:
         self.network: Network = network
         self.width: int = 1200
         self.height: int = 600
-        self.min_x: int = min(hub.x for hub in network.hubs)
-        self.min_y: int = min(hub.y for hub in network.hubs)
-        self.max_x: int = max(hub.x for hub in network.hubs)
-        self.max_y: int = max(hub.y for hub in network.hubs)
+        self._min_x: int = min(hub.x for hub in network.hubs)
+        self._min_y: int = min(hub.y for hub in network.hubs)
+        self._max_x: int = max(hub.x for hub in network.hubs)
+        self._max_y: int = max(hub.y for hub in network.hubs)
         self.horizontal_scroll: int = 0
         self.vertical_scroll: int = 0
 
         self.hub_positions: dict[str, tuple[float, float]] = {
             hub.name: (
-                (hub.x - self.min_x) * 150 + 150,
-                (hub.y - self.min_y) * 100 + self.height * 0.5
+                (hub.x - self._min_x) * 150 + 150,
+                (hub.y - self._min_y) * 100 + self.height * 0.5
                 ) for hub in network.hubs
         }
-        self.background: Any = self.build_background()
+        self.background: Any = self._build_background()
         self.screen: Any = pygame.display.set_mode((self.width, self.height))
         self.font: dict[int, Any] = {
             22: pygame.font.SysFont("Arial", 22),
             36: pygame.font.SysFont("Arial", 36)
         }
 
-    def build_background(self) -> Any:
+    def _build_background(self) -> Any:
         """Build a tiled background large enough to cover the whole map.
 
         The background image is repeated as many times as needed so
@@ -87,8 +87,8 @@ class StaticMap:
         """
         tile: Any = Img.BACKGROUND.value
         tile_w, tile_h = tile.get_size()
-        range_x: int = self.max_x - self.min_x
-        range_y: int = self.max_y - self.min_y
+        range_x: int = self._max_x - self._min_x
+        range_y: int = self._max_y - self._min_y
         world_width: int = max(self.width, range_x * 150 + 600)
         world_height: int = max(self.height, range_y * 100 + 500)
         surface: Any = pygame.Surface((world_width, world_height))
@@ -97,7 +97,7 @@ class StaticMap:
                 surface.blit(tile, (x, y))
         return surface
 
-    def draw_static(self) -> None:
+    def _draw_static(self) -> None:
         """Blit the background, draw all connections and all hubs."""
         self.screen.blit(self.background, (
             self.horizontal_scroll,
@@ -177,7 +177,7 @@ class Animation:
         self.progress: int = 0
         self.turn_duration: int = 1000
 
-    def get_position(self, name: str) -> tuple[float, float]:
+    def _get_position(self, name: str) -> tuple[float, float]:
         """Return the screen coordinates of a hub or the midpoint of a link.
 
         Args:
@@ -197,7 +197,7 @@ class Animation:
                 return pos
         return self.hub_positions[name]
 
-    def draw_drones(self) -> None:
+    def _draw_drones(self) -> None:
         """Draw every drone at its interpolated position for the current turn.
 
         Drones stacked on the same hub are slightly offset so they remain
@@ -222,8 +222,8 @@ class Animation:
         for (drone_id, prev_name), (_, next_name) in zip(
             prev_state, next_state
         ):
-            px, py = self.get_position(prev_name)
-            nx, ny = self.get_position(next_name)
+            px, py = self._get_position(prev_name)
+            nx, ny = self._get_position(next_name)
             x: float = px + (nx - px) * progress_ratio
             y: float = py + (ny - py) * progress_ratio
             x += self.static.horizontal_scroll
@@ -280,7 +280,7 @@ class GameMap:
         self.paused: bool = True
         self.clock: Any = pygame.time.Clock()
 
-    def display_turn_and_status(self) -> None:
+    def _display_turn_and_status(self) -> None:
         """Draw the current turn counter and pause indicator at the top."""
         status: str = " [PAUSED]" if self.paused else ""
         text: str = (
@@ -346,8 +346,8 @@ class GameMap:
                     self.animation.progress = 0
                     self.animation.current_turn += 1
 
-            self.static.draw_static()
-            self.animation.draw_drones()
-            self.display_turn_and_status()
+            self.static._draw_static()
+            self.animation._draw_drones()
+            self._display_turn_and_status()
             pygame.display.flip()
         pygame.quit()

@@ -37,7 +37,7 @@ class PathFinder:
             network: Fully built network graph.
         """
         self.network: Network = network
-        self.unreachable: set[str] = set()
+        self._unreachable: set[str] = set()
 
         if self.network.start_hub.zone == Zone.BLOCKED:
             MSGError.print_error("Path Error: 'start_hub' is blocked")
@@ -47,16 +47,16 @@ class PathFinder:
             sys.exit(1)
 
         try:
-            self.bfs_find_unreachable()
+            self._bfs_find_unreachable()
         except PathError as err:
             MSGError.print_error(f"Path Error: {err}")
             sys.exit(1)
 
         self.paths: list[list[Hub]] = sorted(
-            self.dfs_path(), key=self.compute_path_cost
+            self._dfs_path(), key=self._compute_path_cost
         )
 
-    def is_dead_end(self, hub: Hub) -> bool:
+    def _is_dead_end(self, hub: Hub) -> bool:
         """Check whether the given hub is a dead-end or blocked.
 
         Args:
@@ -71,7 +71,7 @@ class PathFinder:
             return True
         return hub.name in self.unreachable
 
-    def bfs_find_unreachable(self) -> None:
+    def _bfs_find_unreachable(self) -> None:
         """Mark every hub that cannot reach the end hub.
 
         Performs a reverse BFS starting from the end hub, following
@@ -97,7 +97,7 @@ class PathFinder:
         if self.network.start_hub in unvisited:
             raise PathError("no path found")
 
-    def dfs_path(self) -> list[list[Hub]]:
+    def _dfs_path(self) -> list[list[Hub]]:
         """Enumerate all simple paths from start to end via depth-first search.
 
         Dead-ends and already-visited hubs are pruned. The resulting
@@ -120,7 +120,7 @@ class PathFinder:
                 for nxt in hub.next_hubs:
                     if nxt.name in visited:
                         continue
-                    if self.is_dead_end(nxt):
+                    if self._is_dead_end(nxt):
                         continue
                     dfs(nxt)
 
@@ -143,7 +143,7 @@ class PathFinder:
             final.append(path_hub)
         return final
 
-    def compute_path_cost(self, path: list[Hub]) -> float:
+    def _compute_path_cost(self, path: list[Hub]) -> float:
         """Compute the total cost of a path (sum of individual hub costs).
 
         Args:

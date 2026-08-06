@@ -38,6 +38,8 @@ The project is fully object-oriented, type-safe (mypy + flake8), and provides bo
   - Animated drone sprites moving between hubs
   - Turn counter and pause/restart controls
 - Makefile with `install`, `run`, `debug`, `clean`, `fclean`, `lint`, and `lint-strict` targets
+- CLI mode: run a map directly (`python3 main.py map_file.txt`)
+- Optional graphical animation from CLI (`python3 main.py --visual map_file.txt`)
 
 ## Algorithm Choices and Implementation Strategy
 
@@ -211,11 +213,12 @@ AI assistants were used for the following tasks:
 ├── model.py                # Pydantic models
 ├── mypy.ini                # Config mypy to activate pydantic plugin
 ├── network.py              # Runtime graph (Hub, Connection, Drone)
+├── output.py               # Colored simulation output formatter
 ├── parser.py               # Map file parser
 ├── pathfinder.py           # BFS + DFS path discovery & ranking
 ├── requirements.txt        # Dependencies needed
 ├── simulation.py           # Turn-based multi-drone solver
-├── terminal.py             # Interactive menu & textual output
+├── terminal.py             # Interactive menu
 ├── utils.py                # Shared helpers & ANSI colors
 ├── visual.py               # Pygame static map + animation
 ├── drone-isometric-facing-right.png

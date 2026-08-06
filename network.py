@@ -159,8 +159,8 @@ class Network:
             Drone(i) for i in range(1, self.nb_drones + 1)
         ]
 
-        self.get_connections_hubs()
-        self.get_hub_neighbors()
+        self._get_connections_hubs()
+        self._get_hub_neighbors()
 
         self.start_hub: Hub = self.hubs[0]
         self.end_hub: Hub = self.hubs[-1]
@@ -172,7 +172,7 @@ class Network:
                 )
             self.end_hub.max_drones = self.nb_drones
 
-    def get_hub_neighbors(self) -> None:
+    def _get_hub_neighbors(self) -> None:
         """Populate 'next_hubs' and 'previous_hubs' for every hub."""
         for hub in self.hubs:
             for link in self.connections:
@@ -183,7 +183,7 @@ class Network:
                     if link.origin:
                         hub.previous_hubs.append(link.origin)
 
-    def get_connections_hubs(self) -> None:
+    def _get_connections_hubs(self) -> None:
         """Resolve origin/destination hub references on every connection.
 
         Also registers each connection on the destination hub's

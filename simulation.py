@@ -31,32 +31,32 @@ class Simulation:
             network: Fully built network graph.
             pathfinder: PathFinder instance with ranked paths ready.
         """
-        self.network: Network = network
-        self.pathfinder: PathFinder = pathfinder
+        self._network: Network = network
+        self._pathfinder: PathFinder = pathfinder
         self.drones_moves: list[list[tuple[int, str]]] = []
-        self.init_drones_pos()
+        self._init_drones_pos()
 
-    def snapshot(self) -> list[tuple[int, str]]:
+    def _snapshot(self) -> list[tuple[int, str]]:
         """Capture the current position of every drone.
 
         Returns:
             List of '(drone_id, zone_name)' tuples ordered by drone id.
         """
         res: list[tuple[int, str]] = []
-        for drone in self.network.drones:
+        for drone in self._network.drones:
             if drone.zone:
                 res.append((drone.id, drone.zone.name))
         return res
 
-    def init_drones_pos(self) -> None:
+    def _init_drones_pos(self) -> None:
         """Place all drones on the start hub and take initial snapshot."""
-        for drone in self.network.drones:
-            drone.zone = self.network.start_hub
-            self.network.start_hub.current_drones.append(drone)
-            self.network.start_hub.compute_hub_capacity()
-        self.drones_moves.append(self.snapshot())
+        for drone in self._network.drones:
+            drone.zone = self._network.start_hub
+            self._network.start_hub.current_drones.append(drone)
+            self._network.start_hub.compute_hub_capacity()
+        self.drones_moves.append(self._snapshot())
 
-    def collect_transit_drones(self) -> dict[str, list[Drone]]:
+    def _collect_transit_drones(self) -> dict[str, list[Drone]]:
         """Collect drones currently travelling on restricted connections.
 
         Clears the connection occupancy lists after collecting the drones
@@ -67,7 +67,7 @@ class Simulation:
             will arrive there after the restricted transit.
         """
         res: dict[str, list[Drone]] = {}
-        for link in self.network.connections:
+        for link in self._network.connections:
             if link.current_drones and link.destination:
                 res.setdefault(
                     link.destination.name, []
@@ -76,13 +76,13 @@ class Simulation:
                 link.compute_link_capacity()
         return res
 
-    def free_drones(self, restricted: dict[str, list[Drone]]) -> None:
+    def _free_drones(self, restricted: dict[str, list[Drone]]) -> None:
         """Release drones that finished a restricted transit onto their hub.
 
         Args:
             restricted: Mapping produced by the 'restricted_drones' method.
         """
-        for hub in self.network.hubs:
+        for hub in self._network.hubs:
             if hub.name in restricted:
                 for drone in restricted[hub.name]:
                     hub.current_drones.append(drone)
@@ -90,7 +90,7 @@ class Simulation:
                     hub.compute_hub_capacity()
                 del restricted[hub.name]
 
-    def move_drones(self, paths: list[list[Hub]]) -> None:
+    def _move_drones(self, paths: list[list[Hub]]) -> None:
         """Attempt to advance as many drones as possible along ranked paths.
 
         Args:
@@ -103,16 +103,16 @@ class Simulation:
         """
         moved: set[int] = set()
         for path in paths:
-            if len(moved) == self.network.nb_drones:
+            if len(moved) == self._network.nb_drones:
                 break
             for i in range(len(path) - 1, 0, -1):
                 hub: Hub = path[i]
                 prev: Hub = path[i - 1]
                 if not prev.current_drones:
                     continue
-                if hub == self.network.start_hub:
+                if hub == self._network.start_hub:
                     break
-                for link in self.network.connections:
+                for link in self._network.connections:
                     if link.destination == hub and link.origin == prev:
                         while True:
                             candidates = [
@@ -152,18 +152,18 @@ class Simulation:
         A snapshot is recorded after each turn.
         """
         turn: int = 0
-        nb_drones: int = self.network.nb_drones
-        while len(self.network.end_hub.current_drones) != nb_drones:
-            for link in self.network.connections:
+        nb_drones: int = self._network.nb_drones
+        while len(self._network.end_hub.current_drones) != nb_drones:
+            for link in self._network.connections:
                 link.used_this_turn = 0
                 link.compute_link_capacity()
-            paths: list[list[Hub]] = self.pathfinder.paths[:15]
+            paths: list[list[Hub]] = self._pathfinder.paths[:15]
             if turn % 2 and len(paths) > 5:
                 paths = paths[1:]
-            restricted: dict[str, list[Drone]] = self.collect_transit_drones()
-            self.move_drones(paths)
-            self.free_drones(restricted)
+            restricted: dict[str, list[Drone]] = self._collect_transit_drones()
+            self._move_drones(paths)
+            self._free_drones(restricted)
 
             turn += 1
 
-            self.drones_moves.append(self.snapshot())
+            self.drones_moves.append(self._snapshot())
