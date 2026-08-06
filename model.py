@@ -118,7 +118,9 @@ class MapModel:
                         y=raw.start_hub[2],
                         zone=raw.start_hub[3].get('zone', Zone.NORMAL),
                         color=raw.start_hub[3].get('color', Color.NONE),
-                        max_drones=raw.start_hub[3].get('max_drones', 1)
+                        max_drones=raw.start_hub[3].get(
+                            'max_drones', raw.nb_drones
+                            )
                     )
         except ValidationError as err:
             for error in err.errors():
@@ -134,7 +136,9 @@ class MapModel:
                         y=raw.end_hub[2],
                         zone=raw.end_hub[3].get('zone', Zone.NORMAL),
                         color=raw.end_hub[3].get('color', Color.NONE),
-                        max_drones=raw.end_hub[3].get('max_drones', 1)
+                        max_drones=raw.end_hub[3].get(
+                            'max_drones', raw.nb_drones
+                            )
                     )
         except ValidationError as err:
             for error in err.errors():
