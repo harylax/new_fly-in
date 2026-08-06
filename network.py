@@ -7,7 +7,7 @@ used by the pathfinder and simulation.
 
 from __future__ import annotations
 from model import HubData, ConnectionData, MapModel
-from utils import Color, Zone
+from utils import Color, MSGError, Zone
 
 
 class Drone:
@@ -164,6 +164,19 @@ class Network:
 
         self.start_hub: Hub = self.hubs[0]
         self.end_hub: Hub = self.hubs[-1]
+
+        if self.end_hub.max_drones < self.nb_drones:
+            MSGError.print_error(
+                "Map Error: nb_drones exceed end hub capacity, "
+                f"set it to {self.nb_drones}"
+            )
+            self.end_hub.max_drones = self.nb_drones
+        if self.start_hub.max_drones < self.nb_drones:
+            MSGError.print_error(
+                "Map Error: nb_drones exceed start hub capacity, "
+                f"set it to {self.nb_drones}"
+            )
+            self.start_hub.max_drones = self.nb_drones
 
     def _get_hub_neighbors(self) -> None:
         """Populate 'next_hubs' and 'previous_hubs' for every hub."""
