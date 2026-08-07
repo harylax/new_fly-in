@@ -103,8 +103,8 @@ class Main:
         pathfinder: PathFinder = PathFinder(network)
         simulation: Simulation = Simulation(network, pathfinder)
         simulation.solver()
-        output: list[str] = Output(network, simulation).simulation_output()
-        for line in output:
+        output: Output = Output(network, simulation)
+        for line in output.simulation_output():
             print(line)
         if with_visual:
             static: StaticMap = StaticMap(network)
