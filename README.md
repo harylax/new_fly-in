@@ -4,26 +4,30 @@
 
 **Drones are interesting.**
 
-A multi-drone routing simulation that efficiently navigates a fleet of drones from a start hub to an end hub through a network of zones, while respecting capacity constraints, zone types, and movement costs.
-
 ## Description
 
-Fly-in is a turn-based drone simulation system designed as part of the 42 curriculum. The goal is to move a fleet of drones from a central base (`start_hub`) to a target location (`end_hub`) in the fewest possible simulation turns.
+### Presentation
+
+Fly-in is a turn-based drone simulation system designed as part of the 42 curriculum. It navigates multiple drones through a network of interconnected hubs while minimizing the number of simulation turns. The project is fully object-oriented, type-safe (mypy + flake8), and provides both an interactive terminal interface and a graphical visualization built with pygame.
+
+### Goal
+
+The objective of the simulation is to move a fleet of drones from a central base (`start_hub`) to a target location (`end_hub`) in the fewest possible simulation turns. To achieve this, the routing engine must find efficient paths while avoiding congestion, respecting hub and connection capacities, and accounting for the different movement costs associated with each zone type.
+
+### Overview
 
 The network is modeled as a directed graph of interconnected zones (hubs) with the following features:
 
 - **Zone types** with different movement costs:
-  - `normal` — 1 turn (default)
-  - `restricted` — 2 turns (drones occupy the connection during transit)
-  - `priority` — 1 turn (preferred in path ranking)
-  - `blocked` — inaccessible
+  - `normal` - 1 turn (default)
+  - `restricted` - 2 turns (drones occupy the connection during transit)
+  - `priority` - 1 turn (preferred in path ranking)
+  - `blocked` - inaccessible
 - **Capacity constraints**:
   - Per-zone maximum occupancy (`max_drones`)
   - Per-connection maximum concurrent drones (`max_link_capacity`)
-- Special rules for the start and end hubs (unlimited capacity)
+- Unlimited capacity for the start and end hubs.
 - Simultaneous multi-drone movement with conflict avoidance
-
-The project is fully object-oriented, type-safe (mypy + flake8), and provides both a rich terminal interface and a graphical pygame animation.
 
 ## Features
 
@@ -41,60 +45,6 @@ The project is fully object-oriented, type-safe (mypy + flake8), and provides bo
 - CLI mode: run a map directly (`python3 main.py map_file.txt`)
 - Optional graphical animation from CLI (`python3 main.py --visual map_file.txt`)
 
-## Algorithm Choices and Implementation Strategy
-
-### Pathfinding Algorithms
-
-1. **Reverse BFS** starting from the end hub marks every hub that cannot reach the goal. Blocked zones and dead-ends are eliminated early.
-2. **DFS** from the start hub enumerates all simple (cycle-free) paths, pruning any branch that leads to a previously marked unreachable or blocked hub.
-3. Paths are sorted by ascending total cost. The cost of a path is the sum of the individual hub costs (`priority` = 0.5, `normal` = 1, `restricted` = 2). This ordering prefers short, high-priority routes.
-
-### Simulation Engine Strategy
-
-The solver advances turn by turn until every drone has arrived at the end hub:
-
-1. Drones currently in transit on restricted connections are collected and will be released at the very end of the turn, after other free drones shift, to ensure they do not move twice a turn.
-2. Free drones are moved along the first fifteen ranked paths (cheapest first). For each edge of a path the engine tries to push as many eligible drones as capacity allows (both hub and link capacities are checked).
-3. Capacity is freed immediately when a drone leaves a hub, allowing other drones to enter the same hub on the same turn.
-4. A snapshot of every drone’s position is recorded after each turn for later visualization and textual output.
-
-The strategy deliberately limits the number of considered paths (`paths[:15]`) to keep the per-turn complexity manageable while still exploring the most promising routes. Waiting is implicit: if no capacity is available a drone simply stays in place until a later turn.
-
-## Visual Representation
-
-### Terminal
-
-- Colored ASCII banners and menus
-- Step-by-step movement log following the required format (`D<id>-<zone>`)
-- Colored zone highlighting
-
-### Graphical (pygame)
-
-- Static map layer drawn on a panoramic city skyline background
-- Hubs rendered as colored circles with zone-type initials (S/G/B/N/R/P)
-- Connections drawn as thin lines
-- Drone sprites animated smoothly between consecutive positions
-- Stacked drones on the same hub are offset for visibility
-- Keyboard controls:
-  - Arrow keys — pan the camera
-  - Space — pause / resume
-  - R — restart animation
-  - Escape — quit
-- Live turn counter and pause indicator
-
-### User Experience
-
-- Static hubs are drawn at their map coordinates with their names, labels and color to distinguish start, normal, restricted, blocked and priority zones.
-- Connections are drawn between hubs, making all possible drone routes immediately visible.
-- A panoramic background can be scrolled using keyboards arrows key, allowing comfortable visualization of maps larger than the window.
-- Drones move smoothly along connections, making each simulation turn easy to follow.
-- Drones occupying the same hub are rendered with a small positional offset so that every drone remains visible during congestion.
-- The current simulation turn is permanently displayed, allowing users to monitor the progression of the solver.
-- The interface displays whether the animation is currently paused or running, providing immediate visual feedback.
-- The animation can be paused and resume with **Space** key, enabling detailed inspection of drone movements.
-- Pressing **R** restarts the animation from the beginning without rerunning the simulation, making it easy to replay and analyze the routing strategy.
-- The graphical viewer greatly improves understanding of congestion points, capacity bottlenecks, restricted-zone delays, and the overall routing strategy.
-
 ## Instructions
 
 ### Requirements
@@ -110,7 +60,7 @@ make install
 
 This creates a virtual environment (`.venv`) and installs all dependencies.
 
-### Running the simulation
+### Execution / Running the simulation
 
 ```bash
 make run
@@ -147,9 +97,12 @@ make clean         # remove __pycache__ and .mypy_cache
 make fclean        # also remove the virtual environment
 ```
 
-### Map format
+### No Compilation required since the project is written in python
+
+### Input format
 
 Custom maps can be placed anywhere and selected via the menu.
+
 Example:
 ```text
 nb_drones: 5
@@ -178,6 +131,60 @@ turn 4: D2-goal D3-goal D4-tunnelB D5-roof1
 turn 5: D4-goal D5-roof2
 turn 6: D5-goal
 ```
+
+## Algorithm Choices and Implementation Strategy
+
+### Pathfinding Algorithms
+
+1. **Reverse BFS** starting from the end hub marks every hub that cannot reach the goal. Blocked zones and dead-ends are eliminated early.
+2. **DFS** from the start hub enumerates all simple (cycle-free) paths, pruning any branch that leads to a previously marked unreachable or blocked hub.
+3. **Paths are sorted by ascending total cost.** The cost of a path is the sum of the individual hub costs (`priority` = 0.5, `normal` = 1, `restricted` = 2). This ordering prefers short, high-priority routes.
+
+### Simulation Engine Strategy
+
+The solver advances turn by turn until every drone has arrived at the end hub:
+
+1. Drones currently in transit on restricted connections are collected and will be released at the very end of the turn, after other free drones shift, to ensure they do not move twice a turn.
+2. Free drones are moved along the first fifteen ranked paths (cheapest first). For each edge of a path the engine tries to push as many eligible drones as capacity allows (both hub and link capacities are checked).
+3. Capacity is freed immediately when a drone leaves a hub, allowing other drones to enter the same hub on the same turn.
+4. A snapshot of every drone’s position is recorded after each turn for later visualization and textual output.
+
+The strategy deliberately limits the number of considered paths (`paths[:15]`) to only keep the most promising routes. If no capacity is available in the available paths, drones simply stay in place until a later turn.
+
+## Visual Representation
+
+### Terminal
+
+- Colored ASCII banners and menus
+- Step-by-step movement log following the required format (`D<id>-<zone>`)
+- Colored zone highlighting
+
+### Graphical (pygame)
+
+- Static map layer drawn on a panoramic city skyline background
+- Hubs rendered as colored circles with zone-type initials (S/G/B/N/R/P)
+- Connections drawn as thin lines
+- Drone sprites animated smoothly between consecutive positions
+- Stacked drones on the same hub are offset for visibility
+- Keyboard controls:
+  - Arrow keys - pan the camera
+  - Space - pause / resume
+  - R - restart animation
+  - Escape - quit
+- Live turn counter and pause indicator
+
+### User Experience
+
+- Static hubs are drawn at their map coordinates with their names, labels and color to distinguish start, normal, restricted, blocked and priority zones.
+- Connections are drawn between hubs, making all possible drone routes immediately visible.
+- A panoramic background can be scrolled using keyboards arrows key, allowing comfortable visualization of maps larger than the window.
+- Drones move smoothly along connections, making each simulation turn easy to follow.
+- Drones occupying the same hub are rendered with a small positional offset so that every drone remains visible during congestion.
+- The current simulation turn is permanently displayed, allowing users to monitor the progression of the solver.
+- The interface displays whether the animation is currently paused or running, providing immediate visual feedback.
+- The animation can be paused and resume with **Space** key, enabling detailed inspection of drone movements.
+- Pressing **R** restarts the animation from the beginning without rerunning the simulation, making it easy to replay and analyze the routing strategy.
+- The graphical viewer greatly improves understanding of congestion points, capacity bottlenecks, restricted-zone delays, and the overall routing strategy.
 
 ## Resources
 
